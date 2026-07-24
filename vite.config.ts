@@ -11,6 +11,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: [
         'logo-admin.png',
+        'logo-admin-pwa.png',
         'apple-touch-icon.png',
         'icon-192x192.png',
         'icon-512x512.png',
