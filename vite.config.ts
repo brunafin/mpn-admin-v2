@@ -12,7 +12,8 @@ export default defineConfig({
       includeAssets: [
         'favicon.svg',
         'apple-touch-icon.png',
-        'icons.svg',
+        'icon-192x192.png',
+        'icon-512x512.png',
       ],
       manifest: {
         name: 'MPN Admin',
