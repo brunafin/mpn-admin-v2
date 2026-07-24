@@ -6,6 +6,7 @@ import {
   MdOutlinePayments,
 } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
+import { ADMIN_LOGO_URL } from '../../constants/brand';
 import { logoutAndRedirect } from '../../utils/authCookie';
 
 type NavItem = {
@@ -82,17 +83,13 @@ function Header() {
     <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 bg-master px-4 lg:hidden">
       <Link
         to="/clientes"
-        className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-neutral-100 p-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+        className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
       >
-        {import.meta.env.VITE_LOGO_URL ? (
-          <img
-            src={import.meta.env.VITE_LOGO_URL}
-            alt="Marca Pra Nós"
-            className="size-full object-contain"
-          />
-        ) : (
-          <span className="text-xs font-bold text-master">MPN</span>
-        )}
+        <img
+          src={ADMIN_LOGO_URL}
+          alt="MPN Admin"
+          className="size-full object-contain"
+        />
       </Link>
 
       <h1 className="min-w-0 flex-1 truncate text-base font-semibold text-text-light sm:text-lg">
@@ -138,16 +135,12 @@ function Header() {
             <div className="px-4 pb-4 pt-4">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-neutral-100 p-2">
-                    {import.meta.env.VITE_LOGO_URL ? (
-                      <img
-                        src={import.meta.env.VITE_LOGO_URL}
-                        alt=""
-                        className="size-full object-contain"
-                      />
-                    ) : (
-                      <span className="text-sm font-bold text-master">MPN</span>
-                    )}
+                  <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+                    <img
+                      src={ADMIN_LOGO_URL}
+                      alt=""
+                      className="size-full object-contain"
+                    />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-text-light/65">

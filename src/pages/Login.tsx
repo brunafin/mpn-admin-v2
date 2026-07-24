@@ -11,6 +11,7 @@ import {
   type AdminTokenPayload,
 } from '../utils/authCookie';
 import { isPlatformAdminToken } from '../components/ProtectedRoute';
+import { ADMIN_LOGO_URL } from '../constants/brand';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -59,16 +60,12 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-6 flex size-28 items-center justify-center overflow-hidden rounded-2xl bg-neutral-100 p-3 sm:size-32">
-            {import.meta.env.VITE_LOGO_URL ? (
-              <img
-                src={import.meta.env.VITE_LOGO_URL}
-                alt="Marca Pra Nós"
-                className="size-full object-contain"
-              />
-            ) : (
-              <span className="text-2xl font-bold text-master">MPN</span>
-            )}
+          <div className="mb-6 flex w-full max-w-[14rem] items-center justify-center sm:max-w-[16rem]">
+            <img
+              src={ADMIN_LOGO_URL}
+              alt="MPN Admin"
+              className="h-auto w-full object-contain"
+            />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-text-light">
             Entrar

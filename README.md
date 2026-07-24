@@ -23,7 +23,7 @@ Abre em [http://localhost:5174](http://localhost:5174).
 |----------|-----------|
 | `VITE_API_URL_BASE` | Base da API (ex.: `http://localhost:3001`) |
 | `VITE_ENVIRONMENT` | `development` / `production` |
-| `VITE_LOGO_URL` | URL do logo no header (SVG; PWA usa ícones locais com tarja ADMIN) |
+| `VITE_LOGO_URL` | Opcional; sobrescreve o logo local (`/logo-admin.png`) |
 
 ## Promover seu usuário a platform_admin
 

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { MdOutlineGroups, MdOutlineLogout, MdOutlinePayments } from 'react-icons/md';
+import { ADMIN_LOGO_URL } from '../../constants/brand';
 import { logoutAndRedirect } from '../../utils/authCookie';
 import Header from '../Header';
 
@@ -40,17 +41,13 @@ function AppLayout({ children }: AppLayoutProps) {
           <div className="flex items-center gap-3 px-4 py-5">
             <Link
               to="/clientes"
-              className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-neutral-100 p-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+              className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
             >
-              {import.meta.env.VITE_LOGO_URL ? (
-                <img
-                  src={import.meta.env.VITE_LOGO_URL}
-                  alt="Marca Pra Nós"
-                  className="size-full object-contain"
-                />
-              ) : (
-                <span className="text-[10px] font-bold text-master">MPN</span>
-              )}
+              <img
+                src={ADMIN_LOGO_URL}
+                alt="MPN Admin"
+                className="size-full object-contain"
+              />
             </Link>
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wider text-text-light/50">
