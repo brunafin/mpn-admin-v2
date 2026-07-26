@@ -80,39 +80,29 @@ function Header() {
     }`;
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 bg-master px-4 lg:hidden">
+    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-3 bg-master-light px-4 lg:hidden">
       <Link
         to="/clientes"
-        className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+        aria-label="MPN Admin — início"
+        className="flex h-12 w-[4.5rem] shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
       >
         <img
           src={ADMIN_LOGO_URL}
-          alt="MPN Admin"
+          alt=""
           className="size-full object-contain"
         />
       </Link>
 
-      <h1 className="min-w-0 flex-1 truncate text-base font-semibold text-text-light sm:text-lg">
-        <Link
-          to="/clientes"
-          className="block truncate rounded-lg py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
-        >
-          MPN Admin
-        </Link>
-      </h1>
-
-      <div className="flex shrink-0 items-center">
-        <button
-          type="button"
-          aria-label="Abrir menu"
-          aria-expanded={menuOpen}
-          aria-haspopup="dialog"
-          onClick={() => setMenuOpen(true)}
-          className="mpn-tap flex size-11 items-center justify-center rounded-xl text-text-light transition hover:bg-text-light/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
-        >
-          <BsList size={26} aria-hidden />
-        </button>
-      </div>
+      <button
+        type="button"
+        aria-label="Abrir menu"
+        aria-expanded={menuOpen}
+        aria-haspopup="dialog"
+        onClick={() => setMenuOpen(true)}
+        className="mpn-tap flex size-11 shrink-0 items-center justify-center rounded-xl text-text-light transition hover:bg-text-light/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+      >
+        <BsList size={26} aria-hidden />
+      </button>
 
       {menuOpen && (
         <div
@@ -133,27 +123,17 @@ function Header() {
             className="relative z-10 flex h-full w-[min(100%,20rem)] flex-col bg-master text-text-light shadow-2xl"
           >
             <div className="px-4 pb-4 pt-4">
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg">
-                    <img
-                      src={ADMIN_LOGO_URL}
-                      alt=""
-                      className="size-full object-contain"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-text-light/65">
-                      Menu
-                    </p>
-                    <h2
-                      id={titleId}
-                      className="truncate text-lg font-semibold text-text-light"
-                    >
-                      Plataforma
-                    </h2>
-                  </div>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="flex h-14 w-20 shrink-0 items-center justify-center">
+                  <img
+                    src={ADMIN_LOGO_URL}
+                    alt=""
+                    className="size-full object-contain"
+                  />
                 </div>
+                <h2 id={titleId} className="sr-only">
+                  Menu da plataforma
+                </h2>
                 <button
                   ref={closeButtonRef}
                   type="button"

@@ -34,9 +34,9 @@ export function ClientsListSkeleton({
           className="flex min-h-[4.5rem] items-center gap-3 rounded-2xl bg-master-light/70 px-4 py-3.5"
         >
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
               <SkeletonBone className="h-5 w-2/3 max-w-[12rem]" />
-              <SkeletonBone className="h-5 w-14 rounded-full" />
+              <SkeletonBone className="h-5 w-14 shrink-0 rounded-full" />
             </div>
             <SkeletonBone className="h-4 w-1/2 max-w-[10rem]" />
             <SkeletonBone className="h-3.5 w-3/4 max-w-[14rem]" />
@@ -52,40 +52,58 @@ export function ClientsListSkeleton({
 export function ClientDetailSkeleton({ className = '' }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse space-y-3 ${className}`}
+      className={`animate-pulse space-y-4 ${className}`}
       aria-label="Carregando informações"
       aria-busy="true"
     >
-      <div className="rounded-2xl bg-master-light/70 px-4 py-4">
-        <div className="flex gap-2">
-          <SkeletonBone className="h-6 w-20 rounded-full" />
-          <SkeletonBone className="h-6 w-16 rounded-full" />
-        </div>
-        <SkeletonBone className="mt-3 h-4 w-3/4 max-w-xs" />
-      </div>
-
-      <div className="rounded-2xl bg-master-light/70 px-4 py-4">
-        <SkeletonBone className="h-3 w-20" />
-        <SkeletonBone className="mt-3 h-6 w-40" />
-        <SkeletonBone className="mt-2 h-4 w-52" />
+      <div className="rounded-2xl bg-master-light/70 px-4 py-5">
+        <SkeletonBone className="h-3 w-16" />
+        <SkeletonBone className="mt-3 h-7 w-44 max-w-full" />
         <SkeletonBone className="mt-4 h-12 w-full rounded-xl" />
-        <SkeletonBone className="mt-2 h-12 w-full rounded-xl" />
       </div>
 
-      <div className="rounded-2xl bg-master-light/70 px-4 py-4">
-        <SkeletonBone className="h-3 w-24" />
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <SkeletonBone className="h-12 w-full rounded-lg" />
-          <SkeletonBone className="h-12 w-full rounded-lg" />
+      <div className="rounded-2xl bg-master-light/70 px-4 py-5">
+        <div className="flex items-center justify-between gap-3">
+          <SkeletonBone className="h-3 w-20" />
+          <SkeletonBone className="h-4 w-24" />
+        </div>
+        <SkeletonBone className="mt-4 h-3 w-24" />
+        <SkeletonBone className="mt-2 h-9 w-36" />
+        <SkeletonBone className="mt-2 h-4 w-28" />
+        <div className="mt-5 grid grid-cols-2 gap-4 border-t border-text-light/10 pt-4">
+          <div className="space-y-2">
+            <SkeletonBone className="h-3 w-20" />
+            <SkeletonBone className="h-5 w-16" />
+          </div>
+          <div className="space-y-2">
+            <SkeletonBone className="h-3 w-16" />
+            <SkeletonBone className="h-5 w-24" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-master-light/70 px-4 py-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-2">
+            <SkeletonBone className="h-3 w-24" />
+            <SkeletonBone className="mt-3 h-3 w-28" />
+            <SkeletonBone className="h-7 w-32" />
+          </div>
+          <SkeletonBone className="h-4 w-28" />
+        </div>
+        <div className="mt-5 space-y-4">
           <SkeletonBone className="h-12 w-full rounded-lg" />
           <SkeletonBone className="h-12 w-full rounded-lg" />
         </div>
       </div>
 
-      <div className="rounded-2xl bg-master-light/70 px-4 py-4">
-        <SkeletonBone className="h-3 w-20" />
-        <SkeletonBone className="mt-3 h-10 w-full rounded-lg" />
-        <SkeletonBone className="mt-2 h-10 w-full rounded-lg" />
+      <div className="rounded-2xl bg-master-light/70 px-4 py-5">
+        <div className="flex items-center justify-between gap-3">
+          <SkeletonBone className="h-3 w-16" />
+          <SkeletonBone className="h-3 w-6" />
+        </div>
+        <SkeletonBone className="mt-4 h-12 w-full rounded-lg" />
+        <SkeletonBone className="mt-2 h-12 w-full rounded-lg" />
       </div>
     </div>
   );
@@ -101,23 +119,32 @@ export function PlansListSkeleton({
 }) {
   return (
     <ul
-      className={`animate-pulse space-y-2 ${className}`}
+      className={`animate-pulse space-y-3 ${className}`}
       aria-label="Carregando planos"
       aria-busy="true"
     >
       {Array.from({ length: count }).map((_, index) => (
         <li
           key={index}
-          className="flex min-h-[4.5rem] items-center gap-3 rounded-2xl bg-master-light/70 px-4 py-3.5"
+          className="rounded-2xl bg-master-light/70 px-4 py-4"
         >
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex items-center justify-between gap-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-2">
               <SkeletonBone className="h-5 w-2/3 max-w-[12rem]" />
-              <SkeletonBone className="h-5 w-16" />
+              <SkeletonBone className="h-4 w-3/4 max-w-[14rem]" />
             </div>
-            <SkeletonBone className="h-4 w-3/4 max-w-[14rem]" />
+            <SkeletonBone className="size-6 shrink-0 rounded-md" />
           </div>
-          <SkeletonBone className="size-6 shrink-0 rounded-md" />
+          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-text-light/10 pt-3.5">
+            <div className="space-y-2">
+              <SkeletonBone className="h-3 w-20" />
+              <SkeletonBone className="h-6 w-24" />
+            </div>
+            <div className="space-y-2">
+              <SkeletonBone className="h-3 w-16" />
+              <SkeletonBone className="h-6 w-20" />
+            </div>
+          </div>
         </li>
       ))}
     </ul>

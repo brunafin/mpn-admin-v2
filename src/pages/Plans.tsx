@@ -51,19 +51,14 @@ export default function PlansPage() {
   return (
     <AppLayout>
       <section className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-hidden bg-master text-text-light lg:max-w-3xl">
-        <div className="flex shrink-0 items-start justify-between gap-3 px-4 pb-3 pt-4 lg:px-8">
-          <div className="min-w-0">
-            <PageEyebrow>Planos</PageEyebrow>
-            <p className="mt-1 text-base text-text-light/75">
-              {loading ? '…' : `${plans.length} plano${plans.length === 1 ? '' : 's'}`}
-            </p>
-          </div>
+        <div className="flex shrink-0 items-center justify-between gap-3 px-4 pb-2 pt-3 lg:px-8 lg:pb-3 lg:pt-6">
+          <PageEyebrow>Planos</PageEyebrow>
           <Button
             type="button"
             variant="primary"
             size="md"
             fullWidth={false}
-            className="shrink-0 px-3"
+            className="shrink-0 min-h-11 px-3"
             onClick={() => setCreateOpen(true)}
           >
             <MdAdd size={22} aria-hidden />
@@ -71,7 +66,7 @@ export default function PlansPage() {
           </Button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:px-8">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-1 lg:px-8">
           {loading && plans.length === 0 ? <PlansListSkeleton /> : null}
 
           {error ? (
@@ -98,7 +93,7 @@ export default function PlansPage() {
 
           {plans.length > 0 ? (
             <ul
-              className={`space-y-2 transition-opacity ${loading ? 'opacity-60' : ''}`}
+              className={`space-y-3 transition-opacity ${loading ? 'opacity-60' : ''}`}
               aria-busy={loading}
             >
               {plans.map((plan) => (
@@ -106,35 +101,54 @@ export default function PlansPage() {
                   <button
                     type="button"
                     onClick={() => setEditing(plan)}
-                    className="mpn-tap flex min-h-[4.5rem] w-full items-center gap-3 rounded-2xl bg-master-light px-4 py-3.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+                    aria-label={`Editar plano ${plan.name}`}
+                    className="mpn-tap relative flex w-full overflow-hidden rounded-2xl bg-master-light text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="truncate text-lg font-semibold leading-6 text-text-light">
-                          {plan.name}
-                        </p>
-                        <span className="shrink-0 text-base font-semibold leading-6 text-text-light">
-                          {formatCurrencyBRL(Number(plan.basePrice))}
-                        </span>
+                    <div className="min-w-0 flex-1 px-4 py-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <p className="min-w-0 truncate text-lg font-semibold leading-6 text-text-light">
+                              {plan.name}
+                            </p>
+                            {plan.isTrialPlan || Number(plan.id) === 2 ? (
+                              <span className="shrink-0 rounded-full bg-accent-blue/20 px-2.5 py-1 text-xs font-semibold text-accent-blue-soft">
+                                Plano trial
+                              </span>
+                            ) : null}
+                          </div>
+                          {plan.description ? (
+                            <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-text-light/65">
+                              {plan.description}
+                            </p>
+                          ) : null}
+                        </div>
+                        <MdOutlineChevronRight
+                          size={26}
+                          className="mt-0.5 shrink-0 text-text-light/35"
+                          aria-hidden
+                        />
                       </div>
-                      <p className="mt-1 truncate text-base leading-6 text-text-light/75">
-                        {plan.description || '—'}
-                      </p>
-                      <p className="mt-1 text-base leading-6 text-text-light/70">
-                        + {formatCurrencyBRL(Number(plan.pricePerCourt))} a
-                        partir da 2ª quadra
-                      </p>
-                      {plan.isSystem ? (
-                        <p className="mt-1 text-sm font-medium text-accent-blue-soft">
-                          Plano de sistema
-                        </p>
-                      ) : null}
+
+                      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-text-light/10 pt-3.5">
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium uppercase tracking-wide text-text-light/45">
+                            Mensalidade
+                          </p>
+                          <p className="mt-1 truncate text-xl font-semibold tracking-tight text-text-light">
+                            {formatCurrencyBRL(Number(plan.basePrice))}
+                          </p>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium uppercase tracking-wide text-text-light/45">
+                            2ª quadra+
+                          </p>
+                          <p className="mt-1 truncate text-xl font-semibold tracking-tight text-accent-green">
+                            +{formatCurrencyBRL(Number(plan.pricePerCourt))}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <MdOutlineChevronRight
-                      size={26}
-                      className="shrink-0 text-text-light/35"
-                      aria-hidden
-                    />
                   </button>
                 </li>
               ))}
@@ -284,6 +298,12 @@ function PlanFormSheet({
   return (
     <FormSheet isOpen={isOpen} title={title} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-1">
+        {plan?.isTrialPlan || Number(plan?.id) === 2 ? (
+          <p className="mb-3 rounded-xl bg-accent-blue/15 px-3 py-2.5 text-sm leading-5 text-accent-blue-soft">
+            Plano trial — usado automaticamente nos 3 meses de teste após o
+            onboarding.
+          </p>
+        ) : null}
         <Input
           mode="dark"
           name="name"

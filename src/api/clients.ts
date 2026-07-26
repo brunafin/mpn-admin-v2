@@ -9,6 +9,8 @@ export type PlatformPaymentHistoryItem = {
   value: number;
   formOfPayment: string | null;
   paid: boolean;
+  status?: 'open' | 'overdue' | 'awaiting_pix' | 'paid';
+  mpPaymentId?: string | null;
 };
 
 export type PlatformClientListItem = {

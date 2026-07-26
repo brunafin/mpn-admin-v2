@@ -12,11 +12,8 @@ import {
 } from '../api/clients';
 import AppLayout from '../components/AppLayout';
 import EmptyState from '../components/EmptyState';
-import Input from '../components/Input';
-import { PageEyebrow } from '../components/PageTitle';
 import { ClientsListSkeleton } from '../components/Skeleton';
 import SortSheet from '../components/SortSheet';
-import { formatCurrencyBRL } from '../utils/formatCurrency';
 import { formatDate, formatDateTime } from '../utils/format';
 
 type SortOption = 'name' | 'created_at' | 'last_login_at' | 'status';
@@ -42,7 +39,6 @@ const SORT_OPTIONS: Array<{
 
 export default function ClientsPage() {
   const [items, setItems] = useState<PlatformClientListItem[]>([]);
-  const [total, setTotal] = useState(0);
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortOption>('last_login_at');
@@ -69,7 +65,6 @@ export default function ClientsPage() {
       .then((data) => {
         if (cancelled) return;
         setItems(data.items);
-        setTotal(data.total);
       })
       .catch(() => {
         if (cancelled) return;
@@ -93,43 +88,35 @@ export default function ClientsPage() {
       <section className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-hidden bg-master text-text-light lg:max-w-5xl">
         <form
           onSubmit={handleSearchSubmit}
-          className="shrink-0 px-4 pb-3 pt-4 lg:px-8 lg:pt-6"
+          className="shrink-0 px-4 pb-2 pt-3 lg:px-8 lg:pb-3 lg:pt-6"
         >
-          <div className="rounded-2xl bg-master-light p-4">
-            <div className="flex items-stretch gap-2">
-              <div className="min-w-0 flex-1 [&>div]:mb-0">
-                <label htmlFor="search" className="sr-only">
-                  Buscar
-                </label>
-                <Input
-                  name="search"
-                  placeholder="Arena ou dono…"
-                  type="search"
-                  mode="dark"
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  enterKeyHint="search"
-                />
-              </div>
-              <button
-                type="submit"
-                aria-label="Buscar"
-                className="mpn-tap flex w-14 shrink-0 items-center justify-center self-stretch rounded-xl bg-accent-blue text-white transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white enabled:active:brightness-85"
-              >
-                <MdOutlineSearch size={26} aria-hidden />
-              </button>
-            </div>
+          <div className="relative">
+            <label htmlFor="search" className="sr-only">
+              Buscar arena ou dono
+            </label>
+            <input
+              id="search"
+              name="search"
+              type="search"
+              placeholder="Arena ou dono…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              enterKeyHint="search"
+              autoComplete="off"
+              className="mpn-field-dark w-full min-h-11 rounded-xl border-0 bg-master-light py-2.5 pe-12 ps-3.5 text-base font-medium text-text-light placeholder:font-normal placeholder:text-text-light/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue/80 focus-visible:ring-offset-2 focus-visible:ring-offset-master"
+            />
+            <button
+              type="submit"
+              aria-label="Buscar"
+              className="mpn-tap absolute right-1.5 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-text-light/70 transition hover:bg-master hover:text-text-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+            >
+              <MdOutlineSearch size={22} aria-hidden />
+            </button>
           </div>
         </form>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
-          <div className="mb-3 flex items-end justify-between gap-3">
-            <div className="min-w-0">
-              <PageEyebrow>Clientes</PageEyebrow>
-              <p className="mt-1 text-sm text-text-light/55">
-                {loading ? 'Carregando…' : `${total} cliente(s)`}
-              </p>
-            </div>
+          <div className="mb-3 flex justify-end">
             <button
               type="button"
               onClick={() => setSortOpen(true)}
@@ -174,28 +161,25 @@ export default function ClientsPage() {
                     className="mpn-tap flex min-h-[4.5rem] items-center gap-3 rounded-2xl bg-master-light px-4 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex min-w-0 flex-1 items-baseline gap-2">
-                          <p className="truncate text-lg font-semibold leading-6 text-text-light">
-                            {item.name}
-                          </p>
-                          {item.kind === 'company' &&
-                          !item.isTrial &&
-                          item.partnerStatus === 'active' &&
-                          item.plan ? (
-                            <span className="shrink-0 text-base font-medium leading-6 text-text-light/75">
-                              ({formatCurrencyBRL(Number(item.monthlyFee ?? 0))})
-                            </span>
-                          ) : null}
-                        </div>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <p className="min-w-0 truncate text-lg font-semibold leading-6 text-text-light">
+                          {item.name}
+                        </p>
                         <PartnerStatusPill status={item.partnerStatus} />
                       </div>
 
                       <p className="mt-1 truncate text-base leading-6 text-text-light/80">
                         {item.owner?.name || 'Sem dono'}
+                        {item.kind === 'company' ? (
+                          <span className="text-text-light/55">
+                            {' '}
+                            · {item.courtsCount}{' '}
+                            {item.courtsCount === 1 ? 'quadra' : 'quadras'}
+                          </span>
+                        ) : null}
                       </p>
 
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-base leading-6 text-text-light/75">
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs leading-4 text-text-light/50">
                         {item.kind === 'company' &&
                         item.isTrial &&
                         item.trialEndsAt ? (
@@ -207,7 +191,8 @@ export default function ClientsPage() {
                           </>
                         ) : null}
                         <span>
-                          Acesso {formatDateTime(item.owner?.lastLoginAt)}
+                          Último acesso{' '}
+                          {formatDateTime(item.owner?.lastLoginAt)}
                         </span>
                       </div>
                     </div>

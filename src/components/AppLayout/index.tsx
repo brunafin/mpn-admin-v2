@@ -38,25 +38,18 @@ function AppLayout({ children }: AppLayoutProps) {
     <div className="flex min-h-dvh flex-col bg-master lg:h-dvh lg:overflow-hidden">
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <aside className="hidden w-56 shrink-0 flex-col border-r border-text-light/10 bg-master-light lg:flex">
-          <div className="flex items-center gap-3 px-4 py-5">
+          <div className="flex items-center px-4 py-5">
             <Link
               to="/clientes"
-              className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+              aria-label="MPN Admin — início"
+              className="flex h-14 w-20 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
             >
               <img
                 src={ADMIN_LOGO_URL}
-                alt="MPN Admin"
+                alt=""
                 className="size-full object-contain"
               />
             </Link>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-text-light/50">
-                Plataforma
-              </p>
-              <p className="truncate text-sm font-semibold text-text-light">
-                MPN Admin
-              </p>
-            </div>
           </div>
 
           <nav aria-label="Navegação principal" className="flex-1 px-3 py-2">
