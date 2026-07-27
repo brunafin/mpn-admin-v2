@@ -3,14 +3,18 @@ import { jwtDecode } from 'jwt-decode';
 
 const COOKIE_NAME = 'access_token';
 
-const cookieOptions = {
-  path: '/',
-  secure: true,
-  sameSite: 'strict' as const,
-};
+function cookieOptions() {
+  const secure =
+    typeof window !== 'undefined' && window.location.protocol === 'https:';
+  return {
+    path: '/',
+    secure,
+    sameSite: 'strict' as const,
+  };
+}
 
 export function setAccessToken(token: string) {
-  Cookies.set(COOKIE_NAME, token, cookieOptions);
+  Cookies.set(COOKIE_NAME, token, cookieOptions());
 }
 
 export function getAccessToken(): string | undefined {
@@ -28,8 +32,9 @@ export function getAccessTokenPayload<T = Record<string, unknown>>(): T | null {
 }
 
 export function clearAccessToken() {
+  const opts = cookieOptions();
   Cookies.remove(COOKIE_NAME, { path: '/' });
-  Cookies.remove(COOKIE_NAME, cookieOptions);
+  Cookies.remove(COOKIE_NAME, opts);
 }
 
 export function logoutAndRedirect() {
