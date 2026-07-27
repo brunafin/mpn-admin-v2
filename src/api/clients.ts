@@ -1,6 +1,7 @@
 import api from './axios';
 
 export type PartnerStatus = 'onboarding' | 'active' | 'inactive' | 'expired';
+export type AccessMode = 'full' | 'read_only';
 
 export type PlatformPaymentHistoryItem = {
   id: number;
@@ -25,6 +26,9 @@ export type PlatformClientListItem = {
   trialEndsAt: string | null;
   firstAccessAt: string | null;
   isTrial: boolean;
+  accessMode: AccessMode;
+  accessReason: string | null;
+  accessRestrictedAt: string | null;
   createdAt: string;
   dayDue: number | null;
   monthlyFee: number;
@@ -34,7 +38,6 @@ export type PlatformClientListItem = {
     basePrice: number;
     pricePerCourt: number;
     price: number;
-    isPendence: boolean;
   } | null;
   owner: {
     publicId: string;
@@ -142,6 +145,29 @@ export async function updateClientPlan(
 ) {
   const response = await api.patch<PlatformClientDetail>(
     `/platform/clients/${publicId}/plan`,
+    body,
+  );
+  return response.data;
+}
+
+export async function updateClientAccess(
+  publicId: string,
+  body: { accessMode: AccessMode; reason?: 'delinquency' | 'admin' },
+) {
+  const response = await api.patch<PlatformClientDetail>(
+    `/platform/clients/${publicId}/access`,
+    body,
+  );
+  return response.data;
+}
+
+export async function updateCourtVisibility(
+  companyPublicId: string,
+  courtPublicId: string,
+  body: { show: boolean },
+) {
+  const response = await api.patch<PlatformClientDetail>(
+    `/platform/clients/${companyPublicId}/courts/${courtPublicId}/visibility`,
     body,
   );
   return response.data;

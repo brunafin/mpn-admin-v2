@@ -4,6 +4,7 @@ export type ButtonVariant =
   | "primary"
   | "secondary"
   | "danger"
+  | "dangerOutline"
   | "success"
   | "purple"
   | "ghost";
@@ -29,6 +30,8 @@ const variantClass: Record<ButtonVariant, string> = {
     "border border-accent-blue-soft bg-master text-accent-blue-soft hover:bg-accent-blue/10 focus-visible:outline-accent-blue enabled:active:bg-accent-blue/20",
   danger:
     "bg-danger-400 text-white hover:brightness-110 focus-visible:outline-danger-400 enabled:active:brightness-90",
+  dangerOutline:
+    "border border-danger-400/45 bg-transparent text-danger-400/90 hover:border-danger-400/70 hover:bg-danger-400/8 focus-visible:outline-danger-400/70 enabled:active:bg-danger-400/12",
   success:
     "bg-accent-green text-master hover:brightness-110 focus-visible:outline-accent-green enabled:active:brightness-90",
   purple:

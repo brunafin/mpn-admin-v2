@@ -11,7 +11,9 @@ import {
   createClientPayment,
   getClient,
   markClientPaymentPaid,
+  updateClientAccess,
   updateClientPlan,
+  updateCourtVisibility,
   type PartnerStatus,
   type PlatformClientDetail,
   type PlatformPaymentHistoryItem,
@@ -50,6 +52,7 @@ export default function ClientDetailPage() {
   const [client, setClient] = useState<PlatformClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [accessBusy, setAccessBusy] = useState(false);
 
   const [addMonthOpen, setAddMonthOpen] = useState(false);
   const [markPaidPayment, setMarkPaidPayment] =
@@ -150,7 +153,7 @@ export default function ClientDetailPage() {
                     {client.kind === 'onboarding'
                       ? 'Em cadastro — ainda sem estabelecimento no sistema.'
                       : client.partnerStatus === 'expired'
-                        ? 'Trial expirado — sem plano vinculado. Atribua um plano para reativar o acesso.'
+                        ? 'Trial expirado — sem plano. O cliente pode logar, mas não vê a agenda nem aparece no site. Atribua um plano promocional para reativar.'
                         : 'E-mail do dono ainda não confirmado.'}
                   </p>
                 </div>
@@ -251,6 +254,61 @@ export default function ClientDetailPage() {
                       }
                     />
                   </dl>
+
+                  <div className="mt-5 border-t border-text-light/10 pt-4">
+                    <p className="text-sm font-medium text-text-light/55">
+                      Acesso ao manager
+                    </p>
+                    <p className="mt-1 text-base font-semibold text-text-light">
+                      {client.accessMode === 'read_only'
+                        ? 'Somente leitura (inadimplência)'
+                        : 'Completo'}
+                    </p>
+                    <Button
+                      type="button"
+                      size="md"
+                      fullWidth
+                      disabled={accessBusy}
+                      variant={
+                        client.accessMode === 'read_only'
+                          ? 'secondary'
+                          : 'dangerOutline'
+                      }
+                      onClick={async () => {
+                        if (!companyPublicId) return;
+                        setAccessBusy(true);
+                        try {
+                          const next =
+                            client.accessMode === 'read_only'
+                              ? 'full'
+                              : 'read_only';
+                          const updated = await updateClientAccess(
+                            companyPublicId,
+                            next === 'read_only'
+                              ? {
+                                  accessMode: 'read_only',
+                                  reason: 'delinquency',
+                                }
+                              : { accessMode: 'full' },
+                          );
+                          setClient(updated);
+                        } catch {
+                          setError(
+                            'Não foi possível atualizar o acesso do cliente.',
+                          );
+                        } finally {
+                          setAccessBusy(false);
+                        }
+                      }}
+                      className="mpn-tap mt-3"
+                    >
+                      {accessBusy
+                        ? 'Salvando…'
+                        : client.accessMode === 'read_only'
+                          ? 'Liberar escrita'
+                          : 'Bloquear por inadimplência'}
+                    </Button>
+                  </div>
                 </section>
               ) : null}
 
@@ -502,7 +560,15 @@ export default function ClientDetailPage() {
           <CourtDetailSheet
             isOpen={Boolean(selectedCourt)}
             court={selectedCourt}
+            companyPublicId={companyPublicId}
             onClose={() => setSelectedCourt(null)}
+            onUpdated={(updated) => {
+              setClient(updated);
+              const next = updated.courts.find(
+                (c) => c.publicId === selectedCourt?.publicId,
+              );
+              setSelectedCourt(next ?? null);
+            }}
           />
           {client ? (
             <AssignPlanSheet
@@ -809,12 +875,19 @@ function MarkPaidSheet({
 function CourtDetailSheet({
   isOpen,
   court,
+  companyPublicId,
   onClose,
+  onUpdated,
 }: {
   isOpen: boolean;
   court: PlatformClientDetail['courts'][number] | null;
+  companyPublicId?: string;
   onClose: () => void;
+  onUpdated: (client: PlatformClientDetail) => void;
 }) {
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
   return (
     <FormSheet
       isOpen={isOpen}
@@ -840,6 +913,41 @@ function CourtDetailSheet({
             }
           />
           {court.floor ? <Meta label="Piso" value={court.floor} /> : null}
+          {formError ? (
+            <p className="text-base font-medium text-danger-400" role="alert">
+              {formError}
+            </p>
+          ) : null}
+          {companyPublicId ? (
+            <Button
+              type="button"
+              size="md"
+              variant="secondary"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setFormError(null);
+                try {
+                  const updated = await updateCourtVisibility(
+                    companyPublicId,
+                    court.publicId,
+                    { show: !court.show },
+                  );
+                  onUpdated(updated);
+                } catch {
+                  setFormError('Não foi possível atualizar a visibilidade.');
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy
+                ? 'Salvando…'
+                : court.show
+                  ? 'Ocultar do site'
+                  : 'Publicar no site'}
+            </Button>
+          ) : null}
         </dl>
       ) : null}
     </FormSheet>
