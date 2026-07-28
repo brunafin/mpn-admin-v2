@@ -246,7 +246,7 @@ export default function ClientDetailPage() {
                       }
                     />
                     <Meta
-                      label="Trial até"
+                      label={client.isTrial ? 'Trial até' : 'Trial encerrou em'}
                       value={
                         client.trialEndsAt
                           ? formatDate(client.trialEndsAt)
@@ -261,7 +261,7 @@ export default function ClientDetailPage() {
                     </p>
                     <p className="mt-1 text-base font-semibold text-text-light">
                       {client.accessMode === 'read_only'
-                        ? 'Somente leitura (inadimplência)'
+                        ? 'Somente leitura (inadimplência) — fora do site'
                         : 'Completo'}
                     </p>
                     <Button

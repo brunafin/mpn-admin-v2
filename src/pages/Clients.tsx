@@ -180,12 +180,12 @@ export default function ClientsPage() {
                       </p>
 
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs leading-4 text-text-light/50">
-                        {item.kind === 'company' &&
-                        item.isTrial &&
-                        item.trialEndsAt ? (
+                        {item.kind === 'company' && item.trialEndsAt ? (
                           <>
                             <span>
-                              Trial até {formatDate(item.trialEndsAt)}
+                              {item.isTrial
+                                ? `Trial até ${formatDate(item.trialEndsAt)}`
+                                : `Trial encerrou em ${formatDate(item.trialEndsAt)}`}
                             </span>
                             <span aria-hidden>·</span>
                           </>
