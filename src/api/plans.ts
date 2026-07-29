@@ -7,7 +7,7 @@ export type Plan = {
   basePrice: number;
   pricePerCourt: number;
   isSystem: boolean;
-  /** Plano FREE do trial de 3 meses. */
+  /** Plano FREE do trial de 2 meses. */
   isTrialPlan: boolean;
   createdAt: string;
   updatedAt: string;

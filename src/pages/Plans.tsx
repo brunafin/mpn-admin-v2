@@ -300,7 +300,7 @@ function PlanFormSheet({
       <form onSubmit={handleSubmit} className="space-y-1">
         {plan?.isTrialPlan || Number(plan?.id) === 2 ? (
           <p className="mb-3 rounded-xl bg-accent-blue/15 px-3 py-2.5 text-sm leading-5 text-accent-blue-soft">
-            Plano trial — usado automaticamente nos 3 meses de teste após o
+            Plano trial — usado automaticamente nos 2 meses de teste após o
             onboarding.
           </p>
         ) : null}
