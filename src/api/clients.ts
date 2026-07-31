@@ -172,3 +172,24 @@ export async function updateCourtVisibility(
   );
   return response.data;
 }
+
+export type DeleteClientResponse = {
+  ok: true;
+  person: {
+    publicId: string;
+    name: string;
+    email: string;
+  };
+  companies: Array<{
+    publicId: string;
+    name: string;
+  }>;
+  deleted: Record<string, number>;
+};
+
+export async function deleteClient(publicId: string) {
+  const response = await api.delete<DeleteClientResponse>(
+    `/platform/clients/${publicId}`,
+  );
+  return response.data;
+}

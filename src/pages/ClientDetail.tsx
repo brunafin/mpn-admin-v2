@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { FaWhatsapp } from 'react-icons/fa';
 import {
@@ -9,6 +9,7 @@ import {
 } from 'react-icons/md';
 import {
   createClientPayment,
+  deleteClient,
   getClient,
   markClientPaymentPaid,
   updateClientAccess,
@@ -49,6 +50,7 @@ const WHATSAPP_BASE =
  */
 export default function ClientDetailPage() {
   const { companyPublicId } = useParams<{ companyPublicId: string }>();
+  const navigate = useNavigate();
   const [client, setClient] = useState<PlatformClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,6 +63,7 @@ export default function ClientDetailPage() {
     PlatformClientDetail['courts'][number] | null
   >(null);
   const [planSheetOpen, setPlanSheetOpen] = useState(false);
+  const [deleteSheetOpen, setDeleteSheetOpen] = useState(false);
   const [showAllPayments, setShowAllPayments] = useState(false);
 
   useEffect(() => {
@@ -536,6 +539,26 @@ export default function ClientDetailPage() {
                   ) : null}
                 </section>
               ) : null}
+
+              <section
+                aria-labelledby="perigo-heading"
+                className="rounded-2xl border border-danger-400/25 bg-danger-400/5 px-4 py-5"
+              >
+                <SectionLabel id="perigo-heading">Zona de perigo</SectionLabel>
+                <p className="mt-3 text-base leading-6 text-text-light/75">
+                  Exclui o dono, o estabelecimento, quadras, agendas, reservas e
+                  pagamentos. Esta ação não pode ser desfeita.
+                </p>
+                <Button
+                  type="button"
+                  variant="dangerOutline"
+                  size="md"
+                  className="mpn-tap mt-4"
+                  onClick={() => setDeleteSheetOpen(true)}
+                >
+                  Excluir cliente
+                </Button>
+              </section>
             </div>
           ) : null}
         </div>
@@ -579,6 +602,15 @@ export default function ClientDetailPage() {
               onSaved={async () => {
                 await refreshClient();
               }}
+            />
+          ) : null}
+          {client ? (
+            <DeleteClientSheet
+              isOpen={deleteSheetOpen}
+              publicId={companyPublicId}
+              client={client}
+              onClose={() => setDeleteSheetOpen(false)}
+              onDeleted={() => navigate('/clientes', { replace: true })}
             />
           ) : null}
         </>
@@ -1094,6 +1126,95 @@ function AssignPlanSheet({
         ) : null}
         <Button type="submit" size="md" disabled={submitting || loadingPlans}>
           {submitting ? 'Salvando…' : 'Salvar plano'}
+        </Button>
+      </form>
+    </FormSheet>
+  );
+}
+
+function DeleteClientSheet({
+  isOpen,
+  publicId,
+  client,
+  onClose,
+  onDeleted,
+}: {
+  isOpen: boolean;
+  publicId: string;
+  client: PlatformClientDetail;
+  onClose: () => void;
+  onDeleted: () => void;
+}) {
+  const confirmName = client.name.trim();
+  const [typedName, setTypedName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setTypedName('');
+    setFormError('');
+    setSubmitting(false);
+  }, [isOpen, client.publicId]);
+
+  const canConfirm =
+    typedName.trim().localeCompare(confirmName, 'pt-BR', {
+      sensitivity: 'accent',
+    }) === 0;
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!canConfirm) {
+      setFormError('Digite o nome do cliente exatamente como aparece.');
+      return;
+    }
+
+    setSubmitting(true);
+    setFormError('');
+    try {
+      await deleteClient(publicId);
+      onDeleted();
+    } catch (error) {
+      setFormError(
+        getApiErrorMessage(error, 'Não foi possível excluir o cliente.'),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <FormSheet isOpen={isOpen} title="Excluir cliente" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-1">
+        <p className="mb-3 text-base leading-6 text-text-light/80">
+          Isso apaga{' '}
+          <span className="font-semibold text-text-light">{confirmName}</span>
+          {client.kind === 'company'
+            ? `, ${client.courtsCount} quadra${client.courtsCount === 1 ? '' : 's'}, agendas, reservas e pagamentos`
+            : ' e o cadastro em andamento'}
+          . Não tem volta.
+        </p>
+        <Input
+          mode="dark"
+          name="confirmName"
+          title={`Digite “${confirmName}” para confirmar`}
+          required
+          autoComplete="off"
+          value={typedName}
+          onChange={(event) => setTypedName(event.target.value)}
+        />
+        {formError ? (
+          <p className="mb-3 text-base font-medium text-danger-400" role="alert">
+            {formError}
+          </p>
+        ) : null}
+        <Button
+          type="submit"
+          variant="danger"
+          size="md"
+          disabled={submitting || !canConfirm}
+        >
+          {submitting ? 'Excluindo…' : 'Excluir definitivamente'}
         </Button>
       </form>
     </FormSheet>
