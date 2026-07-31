@@ -84,7 +84,7 @@ function Header() {
       <Link
         to="/clientes"
         aria-label="MPN Admin — início"
-        className="flex h-12 w-[4.5rem] shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+        className="flex h-12 w-20 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
       >
         <img
           src={ADMIN_LOGO_URL}
@@ -124,7 +124,7 @@ function Header() {
           >
             <div className="px-4 pb-4 pt-4">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="flex h-14 w-20 shrink-0 items-center justify-center">
+                <div className="flex h-14 w-24 shrink-0 items-center justify-center">
                   <img
                     src={ADMIN_LOGO_URL}
                     alt=""

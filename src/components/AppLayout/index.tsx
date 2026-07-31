@@ -42,7 +42,7 @@ function AppLayout({ children }: AppLayoutProps) {
             <Link
               to="/clientes"
               aria-label="MPN Admin — início"
-              className="flex h-14 w-20 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+              className="flex h-14 w-28 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
             >
               <img
                 src={ADMIN_LOGO_URL}

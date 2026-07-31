@@ -60,7 +60,7 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-6 flex w-full max-w-[14rem] items-center justify-center sm:max-w-[16rem]">
+          <div className="mb-6 flex w-full max-w-[16rem] items-center justify-center sm:max-w-[18rem]">
             <img
               src={ADMIN_LOGO_URL}
               alt="MPN Admin"
