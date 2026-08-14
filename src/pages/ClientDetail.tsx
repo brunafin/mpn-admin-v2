@@ -1,10 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FaWhatsapp } from 'react-icons/fa';
 import {
   MdArrowBack,
-  MdOpenInNew,
   MdOutlineChevronRight,
 } from 'react-icons/md';
 import {
@@ -12,7 +10,6 @@ import {
   deleteClient,
   getClient,
   markClientPaymentPaid,
-  updateClientAccess,
   updateClientPlan,
   updateCourtVisibility,
   type PartnerStatus,
@@ -21,7 +18,8 @@ import {
 } from '../api/clients';
 import { listPlans, type Plan } from '../api/plans';
 import AppLayout from '../components/AppLayout';
-import Button, { buttonClassName } from '../components/Button';
+import Button from '../components/Button';
+import Card, { CardLabel } from '../components/Card';
 import FormSheet from '../components/FormSheet';
 import { PageTitle } from '../components/PageTitle';
 import Input from '../components/Input';
@@ -43,10 +41,9 @@ const WHATSAPP_BASE =
 /**
  * Hierarquia (mobile-first, dona da plataforma):
  * 1. Nome + status (header sticky)
- * 2. Contato — identidade do dono + CTA WhatsApp
- * 3. Comercial — mensalidade em destaque + meta do plano
- * 4. Pagamentos — timeline e total recebido
- * 5. Quadras / Estabelecimento — contexto operacional
+ * 2. Identidade — dono/WhatsApp e último acesso
+ * 3. Plano e pagamentos (coluna principal)
+ * 4. Quadras (coluna secundária no desktop)
  */
 export default function ClientDetailPage() {
   const { companyPublicId } = useParams<{ companyPublicId: string }>();
@@ -54,7 +51,6 @@ export default function ClientDetailPage() {
   const [client, setClient] = useState<PlatformClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [accessBusy, setAccessBusy] = useState(false);
 
   const [addMonthOpen, setAddMonthOpen] = useState(false);
   const [markPaidPayment, setMarkPaidPayment] =
@@ -108,15 +104,15 @@ export default function ClientDetailPage() {
   return (
     <AppLayout>
       <section
-        className={`mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-hidden bg-master text-text-light transition-opacity lg:max-w-3xl ${
+        className={`mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-hidden bg-master text-text-light transition-opacity lg:max-w-5xl ${
           loading && client ? 'opacity-80' : ''
         }`}
         aria-busy={loading}
       >
-        <div className="sticky top-0 z-10 flex shrink-0 items-center gap-1 border-b border-text-light/10 bg-master px-2 py-2 lg:px-6">
+        <div className="sticky top-0 z-10 flex shrink-0 items-center gap-1 bg-master px-2 py-2 lg:px-6">
           <Link
-            to="/clientes"
-            aria-label="Voltar para clientes"
+            to="/quadras"
+            aria-label="Voltar para quadras"
             className="mpn-tap flex size-11 shrink-0 items-center justify-center rounded-xl text-text-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
           >
             <MdArrowBack size={24} aria-hidden />
@@ -145,422 +141,209 @@ export default function ClientDetailPage() {
               {client.kind === 'onboarding' ||
               client.partnerStatus === 'expired' ||
               (client.owner && !client.owner.emailVerified) ? (
-                <div
+                <p
                   role="status"
-                  className="rounded-2xl border border-warning-500/35 bg-warning-500/10 px-4 py-3.5"
+                  className="rounded-3xl bg-warning-500/10 px-5 py-4 text-sm leading-5 text-warning-500"
                 >
-                  <p className="text-sm font-semibold uppercase tracking-wide text-warning-500">
-                    Atenção
-                  </p>
-                  <p className="mt-1.5 text-base leading-6 text-text-light">
-                    {client.kind === 'onboarding'
-                      ? 'Em cadastro — ainda sem estabelecimento no sistema.'
-                      : client.partnerStatus === 'expired'
-                        ? 'Trial expirado — sem plano. O cliente pode logar, mas não vê a agenda nem aparece no site. Atribua um plano promocional para reativar.'
-                        : 'E-mail do dono ainda não confirmado.'}
-                  </p>
-                </div>
+                  {client.kind === 'onboarding'
+                    ? 'Em cadastro — ainda sem estabelecimento no sistema.'
+                    : client.partnerStatus === 'expired'
+                      ? 'Trial expirado. Atribua um plano para reativar agenda e site.'
+                      : 'E-mail do dono ainda não confirmado.'}
+                </p>
               ) : null}
 
-              <section
-                aria-labelledby="contato-heading"
-                className="rounded-2xl bg-master-light px-4 py-5"
-              >
-                <SectionLabel id="contato-heading">Contato</SectionLabel>
-                <p className="mt-3 text-xl font-semibold tracking-tight text-text-light">
-                  {client.owner?.name || 'Sem nome'}
-                </p>
-                {ownerPhoneDigits ? (
-                  <a
-                    href={`${WHATSAPP_BASE}${ownerPhoneDigits}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`Abrir WhatsApp de ${client.owner?.name || 'dono'} — ${formatPhoneMask(client.owner?.phone || '')}`}
-                    className={buttonClassName({
-                      variant: 'secondary',
-                      size: 'md',
-                      className:
-                        'mpn-tap mt-4 border-accent-green/40 text-accent-green hover:bg-accent-green/10 focus-visible:outline-accent-green',
-                    })}
-                  >
-                    <FaWhatsapp size={20} aria-hidden />
-                    <span>{formatPhoneMask(client.owner?.phone || '')}</span>
-                  </a>
-                ) : (
-                  <p className="mt-3 text-base text-text-light/55">
-                    Sem telefone cadastrado
-                  </p>
-                )}
-              </section>
-
-              {client.kind === 'company' ? (
-                <section
-                  aria-labelledby="comercial-heading"
-                  className="rounded-2xl bg-master-light px-4 py-5"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <SectionLabel id="comercial-heading">
-                      Comercial
-                    </SectionLabel>
-                    <button
-                      type="button"
-                      onClick={() => setPlanSheetOpen(true)}
-                      className="mpn-tap inline-flex min-h-11 shrink-0 items-center rounded-xl px-2.5 text-sm font-semibold text-accent-blue-soft transition hover:bg-accent-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
-                    >
-                      Alterar plano
-                    </button>
-                  </div>
-
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-text-light/55">
-                      Mensalidade
-                    </p>
-                    <p className="mt-1 text-3xl font-semibold tracking-tight text-text-light">
-                      {formatCurrencyBRL(Number(client.monthlyFee ?? 0))}
-                    </p>
-                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-2">
-                      <p className="text-base font-medium text-text-light/80">
-                        {client.partnerStatus === 'expired'
-                          ? 'Plano expirado'
-                          : client.plan?.name ||
-                            (client.isTrial ? 'Gratuito' : 'Sem plano')}
+              <Card>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    {ownerPhoneDigits ? (
+                      <a
+                        href={`${WHATSAPP_BASE}${ownerPhoneDigits}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Abrir WhatsApp de ${client.owner?.name || 'dono'} — ${formatPhoneMask(client.owner?.phone || '')}`}
+                        className="mpn-tap block min-w-0 truncate rounded-lg text-sm font-semibold text-text-light transition hover:text-accent-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-green"
+                      >
+                        {client.owner?.name || 'Sem nome'}
+                      </a>
+                    ) : (
+                      <p className="min-w-0 truncate text-sm font-semibold text-text-light/70">
+                        {client.owner?.name || 'Sem nome'}
                       </p>
-                      {client.isTrial && client.partnerStatus !== 'expired' ? (
-                        <span className="shrink-0 rounded-full bg-accent-blue/20 px-2.5 py-1 text-xs font-semibold text-accent-blue-soft">
-                          Plano trial
-                        </span>
-                      ) : null}
-                    </div>
-                    {!client.isTrial && client.plan ? (
-                      <p className="mt-2 text-sm leading-5 text-text-light/55">
-                        {formatCurrencyBRL(Number(client.plan.basePrice))} base
-                        {client.courtsCount > 1
-                          ? ` + ${formatCurrencyBRL(Number(client.plan.pricePerCourt))} × ${client.courtsCount - 1} quadra${client.courtsCount - 1 === 1 ? '' : 's'} extra${client.courtsCount - 1 === 1 ? '' : 's'}`
-                          : ' · 1ª quadra inclusa'}
+                    )}
+                    {client.isTrial ? (
+                      <p className="mt-0.5 text-sm text-text-light/70">
+                        {client.trialEndsAt
+                          ? `Trial até ${formatDate(client.trialEndsAt)}`
+                          : 'Trial'}
                       </p>
                     ) : null}
                   </div>
-
-                  <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-text-light/10 pt-4">
-                    <Meta
-                      label="Vencimento"
-                      value={
-                        client.dayDue != null ? `Dia ${client.dayDue}` : '—'
-                      }
-                    />
-                    <Meta
-                      label={client.isTrial ? 'Trial até' : 'Trial encerrou em'}
-                      value={
-                        client.trialEndsAt
-                          ? formatDate(client.trialEndsAt)
-                          : '—'
-                      }
-                    />
-                  </dl>
-
-                  <div className="mt-5 border-t border-text-light/10 pt-4">
-                    <p className="text-sm font-medium text-text-light/55">
-                      Acesso ao manager
-                    </p>
-                    <p className="mt-1 text-base font-semibold text-text-light">
-                      {client.accessMode === 'read_only'
-                        ? 'Somente leitura (inadimplência) — fora do site'
-                        : 'Completo'}
-                    </p>
-                    <Button
-                      type="button"
-                      size="md"
-                      fullWidth
-                      disabled={accessBusy}
-                      variant={
-                        client.accessMode === 'read_only'
-                          ? 'secondary'
-                          : 'dangerOutline'
-                      }
-                      onClick={async () => {
-                        if (!companyPublicId) return;
-                        setAccessBusy(true);
-                        try {
-                          const next =
-                            client.accessMode === 'read_only'
-                              ? 'full'
-                              : 'read_only';
-                          const updated = await updateClientAccess(
-                            companyPublicId,
-                            next === 'read_only'
-                              ? {
-                                  accessMode: 'read_only',
-                                  reason: 'delinquency',
-                                }
-                              : { accessMode: 'full' },
-                          );
-                          setClient(updated);
-                        } catch {
-                          setError(
-                            'Não foi possível atualizar o acesso do cliente.',
-                          );
-                        } finally {
-                          setAccessBusy(false);
-                        }
-                      }}
-                      className="mpn-tap mt-3"
-                    >
-                      {accessBusy
-                        ? 'Salvando…'
-                        : client.accessMode === 'read_only'
-                          ? 'Liberar escrita'
-                          : 'Bloquear por inadimplência'}
-                    </Button>
-                  </div>
-                </section>
-              ) : null}
+                  <span className="shrink-0 pt-0.5 text-sm text-text-light/70">
+                    Último acesso {formatDateTime(client.owner?.lastLoginAt)}
+                  </span>
+                </div>
+              </Card>
 
               {client.kind === 'company' ? (
-                <section
-                  aria-labelledby="pagamentos-heading"
-                  className="rounded-2xl bg-master-light px-4 py-5"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <SectionLabel id="pagamentos-heading">
-                        Pagamentos
-                      </SectionLabel>
-                      <p className="mt-3 text-sm font-medium text-text-light/55">
-                        Total recebido
-                      </p>
-                      <p className="mt-1 text-2xl font-semibold tracking-tight text-accent-green">
-                        {formatCurrencyBRL(totalReceived)}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setAddMonthOpen(true)}
-                      className="mpn-tap inline-flex min-h-11 shrink-0 items-center rounded-xl px-2.5 text-sm font-semibold text-accent-blue-soft transition hover:bg-accent-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+                <div className="grid items-start gap-4 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <Panel
+                      id="comercial-heading"
+                      title="Plano"
+                      action={
+                        <TextAction onClick={() => setPlanSheetOpen(true)}>
+                          Alterar
+                        </TextAction>
+                      }
                     >
-                      Adicionar mês
-                    </button>
-                  </div>
+                      <p className="text-3xl font-semibold tabular-nums tracking-tight text-accent-blue">
+                        {formatCurrencyBRL(Number(client.monthlyFee ?? 0))}
+                        <span className="ms-1 text-sm font-medium text-text-light/55">
+                          /mês
+                        </span>
+                      </p>
+                      <p className="mt-1 text-sm text-text-light/80">
+                        {client.plan?.name || 'Sem plano'}
+                      </p>
+                    </Panel>
 
-                  {paymentHistory.length === 0 ? (
-                    <p className="mt-5 text-base text-text-light/55">
-                      Nenhum registro de pagamento.
-                    </p>
-                  ) : (
-                    <>
-                      <ol className="relative ms-1 mt-5 border-s border-text-light/20 ps-5">
-                        {visiblePayments.map((payment) => (
-                          <li
-                            key={payment.id}
-                            className="relative pb-5 last:pb-0"
-                          >
-                            <span
-                              className={`absolute -start-[1.4rem] top-2 size-2.5 rounded-full ring-4 ring-master-light ${
-                                payment.paid
-                                  ? 'bg-accent-green'
-                                  : payment.status === 'awaiting_pix'
-                                    ? 'bg-accent-blue'
-                                    : 'bg-warning-500'
-                              }`}
-                              aria-hidden
-                            />
-                            <div className="min-w-0">
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="text-base font-semibold capitalize leading-6 text-text-light">
+                    <Panel
+                      id="pagamentos-heading"
+                      title="Pagamentos"
+                      action={
+                        <TextAction onClick={() => setAddMonthOpen(true)}>
+                          Adicionar
+                        </TextAction>
+                      }
+                    >
+                      <p className="text-sm font-semibold text-accent-blue">
+                        {formatCurrencyBRL(totalReceived)}{' '}
+                        <span className="font-medium text-text-light/55">
+                          recebido
+                        </span>
+                      </p>
+
+                      {paymentHistory.length === 0 ? (
+                        <p className="mt-3 text-sm text-text-light/60">
+                          Nenhum pagamento registrado.
+                        </p>
+                      ) : (
+                        <>
+                          <ul className="mt-3">
+                            {visiblePayments.map((payment) => {
+                              const status = paymentStatus(payment);
+                              return (
+                                <li
+                                  key={payment.id}
+                                  className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 border-t border-text-light/10 py-2.5 first:border-t-0 first:pt-0"
+                                >
+                                  <p className="min-w-0 truncate text-sm font-medium capitalize text-text-light">
                                     {formatMonthYear(payment.dueDate)}
                                   </p>
-                                  <p className="mt-0.5 text-sm leading-5 text-text-light/70">
+                                  <p className="text-sm tabular-nums text-text-light/75">
                                     {formatCurrencyBRL(Number(payment.value))}
-                                    {payment.paid
-                                      ? ` · pago em ${formatDate(payment.date)}`
-                                      : payment.status === 'awaiting_pix'
-                                        ? ' · aguardando PIX'
-                                        : ' · pendente'}
                                   </p>
-                                </div>
-                                {payment.paid ? (
-                                  <span className="shrink-0 rounded-full bg-accent-green/20 px-2.5 py-1 text-xs font-semibold text-accent-green">
-                                    Pago
-                                  </span>
-                                ) : payment.status === 'awaiting_pix' ? (
-                                  <span className="shrink-0 rounded-full bg-accent-blue/20 px-2.5 py-1 text-xs font-semibold text-accent-blue-soft">
-                                    Aguardando PIX
-                                  </span>
-                                ) : payment.status === 'overdue' ? (
-                                  <span className="shrink-0 rounded-full bg-danger-400/20 px-2.5 py-1 text-xs font-semibold text-danger-400">
-                                    Vencido
-                                  </span>
-                                ) : (
-                                  <span className="shrink-0 rounded-full bg-warning-500/20 px-2.5 py-1 text-xs font-semibold text-warning-500">
-                                    Pendente
-                                  </span>
-                                )}
-                              </div>
-                              {payment.mpPaymentId ? (
-                                <p className="mt-1 text-xs text-text-light/45">
-                                  MP: {payment.mpPaymentId}
-                                </p>
-                              ) : null}
-                              {!payment.paid ? (
-                                <Button
-                                  type="button"
-                                  variant="primary"
-                                  size="md"
-                                  fullWidth={false}
-                                  className="mt-3 min-h-11 px-3 text-sm"
-                                  onClick={() => setMarkPaidPayment(payment)}
-                                >
-                                  Marcar como pago
-                                </Button>
-                              ) : null}
-                            </div>
-                          </li>
-                        ))}
-                      </ol>
-                      {hasMorePayments ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setShowAllPayments((open) => !open)
-                          }
-                          className="mpn-tap mt-2 inline-flex min-h-11 items-center rounded-xl px-1 text-sm font-semibold text-accent-blue-soft transition hover:bg-accent-blue/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
-                        >
-                          {showAllPayments
-                            ? 'Ver menos'
-                            : `Ver mais (${paymentHistory.length - 3})`}
-                        </button>
-                      ) : null}
-                    </>
-                  )}
-                </section>
-              ) : null}
-
-              {client.kind === 'company' ? (
-                <section
-                  aria-labelledby="quadras-heading"
-                  className="rounded-2xl bg-master-light px-4 py-5"
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <SectionLabel id="quadras-heading">Quadras</SectionLabel>
-                    <p
-                      className="text-sm font-semibold tabular-nums text-text-light/55"
-                      aria-label={`${client.courtsCount} quadras`}
-                    >
-                      {client.courtsCount}
-                    </p>
+                                  <div className="flex items-center justify-end gap-2">
+                                    <span
+                                      className={`text-xs font-semibold ${status.className}`}
+                                    >
+                                      {status.label}
+                                    </span>
+                                    {!payment.paid ? (
+                                      <TextAction
+                                        onClick={() =>
+                                          setMarkPaidPayment(payment)
+                                        }
+                                      >
+                                        Marcar
+                                      </TextAction>
+                                    ) : null}
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                          {hasMorePayments ? (
+                            <TextAction
+                              onClick={() =>
+                                setShowAllPayments((open) => !open)
+                              }
+                            >
+                              {showAllPayments
+                                ? 'Ver menos'
+                                : `Ver mais (${paymentHistory.length - 3})`}
+                            </TextAction>
+                          ) : null}
+                        </>
+                      )}
+                    </Panel>
                   </div>
 
-                  {client.courts.length === 0 ? (
-                    <p className="mt-4 text-base text-text-light/55">
-                      Nenhuma quadra cadastrada.
-                    </p>
-                  ) : (
-                    <ul className="mt-2 divide-y divide-text-light/10">
-                      {client.courts.map((court) => (
-                        <li key={court.publicId}>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedCourt(court)}
-                            aria-label={`${court.name}, ${court.show ? 'visível no site' : 'oculta'}`}
-                            className="mpn-tap flex min-h-14 w-full items-center gap-3 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
-                          >
-                            <span className="min-w-0 flex-1 truncate text-base font-semibold leading-6 text-text-light">
-                              {court.name}
-                            </span>
-                            <span
-                              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                court.show
-                                  ? 'bg-accent-green/20 text-accent-green'
-                                  : 'bg-text-light/10 text-text-light/55'
-                              }`}
-                            >
-                              {court.show ? 'No site' : 'Oculta'}
-                            </span>
-                            <MdOutlineChevronRight
-                              size={22}
-                              className="shrink-0 text-text-light/35"
-                              aria-hidden
-                            />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-              ) : null}
-
-              {client.kind === 'company' ? (
-                <section
-                  aria-labelledby="estabelecimento-heading"
-                  className="rounded-2xl bg-master-light px-4 py-5"
-                >
-                  <SectionLabel id="estabelecimento-heading">
-                    Estabelecimento
-                  </SectionLabel>
-
-                  <dl className="mt-4 divide-y divide-text-light/10">
-                    <MetaRow
-                      label="No portal"
-                      value={client.onPortal ? 'Sim' : 'Não'}
-                    />
-                    <MetaRow
-                      label="Primeiro acesso"
-                      value={formatDateTime(client.firstAccessAt)}
-                    />
-                    <MetaRow
-                      label="Último acesso"
-                      value={formatDateTime(client.owner?.lastLoginAt)}
-                    />
-                    <MetaRow
-                      label="Criado em"
-                      value={formatDateTime(client.createdAt)}
-                    />
-                    <MetaRow
-                      label="Endereço"
-                      value={formatAddress(client.address)}
-                      stacked
-                    />
-                  </dl>
-
-                  {client.publicLink ? (
-                    <a
-                      href={client.publicLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={buttonClassName({
-                        variant: 'secondary',
-                        size: 'md',
-                        className: 'mpn-tap mt-5',
-                      })}
+                  <div className="space-y-4">
+                    <Panel
+                      id="quadras-heading"
+                      title="Quadras"
+                      action={
+                        <span
+                          className="text-sm font-medium tabular-nums text-text-light/60"
+                          aria-label={`${client.courtsCount} quadras`}
+                        >
+                          {client.courtsCount}
+                        </span>
+                      }
                     >
-                      Ver página pública
-                      <MdOpenInNew size={18} aria-hidden />
-                    </a>
-                  ) : null}
-                </section>
+                      {client.courts.length === 0 ? (
+                        <p className="text-sm text-text-light/60">
+                          Nenhuma quadra cadastrada.
+                        </p>
+                      ) : (
+                        <ul className="-mx-1">
+                          {client.courts.map((court) => (
+                            <li key={court.publicId}>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedCourt(court)}
+                                aria-label={`${court.name}, ${court.show ? 'visível no site' : 'oculta'}`}
+                                className="mpn-tap flex min-h-10 w-full items-center gap-2 rounded-lg px-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+                              >
+                                <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-light">
+                                  {court.name}
+                                </span>
+                                <span
+                                  className={`text-xs font-medium ${
+                                    court.show
+                                      ? 'text-accent-green'
+                                      : 'text-text-light/55'
+                                  }`}
+                                >
+                                  {court.show ? 'No site' : 'Oculta'}
+                                </span>
+                                <MdOutlineChevronRight
+                                  size={18}
+                                  className="shrink-0 text-text-light/40"
+                                  aria-hidden
+                                />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </Panel>
+                  </div>
+                </div>
               ) : null}
 
-              <section
-                aria-labelledby="perigo-heading"
-                className="rounded-2xl border border-danger-400/25 bg-danger-400/5 px-4 py-5"
+              <button
+                type="button"
+                onClick={() => setDeleteSheetOpen(true)}
+                className="mpn-tap min-h-8 px-1 text-sm font-medium text-danger-400/80 transition hover:text-danger-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger-400"
               >
-                <SectionLabel id="perigo-heading">Zona de perigo</SectionLabel>
-                <p className="mt-3 text-base leading-6 text-text-light/75">
-                  Exclui o dono, o estabelecimento, quadras, agendas, reservas e
-                  pagamentos. Esta ação não pode ser desfeita.
-                </p>
-                <Button
-                  type="button"
-                  variant="dangerOutline"
-                  size="md"
-                  className="mpn-tap mt-4"
-                  onClick={() => setDeleteSheetOpen(true)}
-                >
-                  Excluir cliente
-                </Button>
-              </section>
+                Excluir cliente
+              </button>
             </div>
           ) : null}
+
         </div>
       </section>
 
@@ -610,7 +393,7 @@ export default function ClientDetailPage() {
               publicId={companyPublicId}
               client={client}
               onClose={() => setDeleteSheetOpen(false)}
-              onDeleted={() => navigate('/clientes', { replace: true })}
+              onDeleted={() => navigate('/quadras', { replace: true })}
             />
           ) : null}
         </>
@@ -627,53 +410,87 @@ function SectionLabel({
   id?: string;
 }) {
   return (
-    <h2
-      id={id}
-      className="text-sm font-semibold uppercase tracking-wide text-text-light/55"
+    <CardLabel id={id} as="h2">
+      {children}
+    </CardLabel>
+  );
+}
+
+function Panel({
+  id,
+  title,
+  action,
+  children,
+}: {
+  id: string;
+  title: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <Card aria-labelledby={id}>
+      <header className="flex items-center justify-between gap-3">
+        <SectionLabel id={id}>{title}</SectionLabel>
+        {action}
+      </header>
+      <div className="mt-3">{children}</div>
+    </Card>
+  );
+}
+
+function TextAction({
+  children,
+  onClick,
+  disabled,
+  tone = 'accent',
+  'aria-label': ariaLabel,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  tone?: 'accent' | 'danger';
+  'aria-label'?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className={`mpn-tap inline-flex min-h-8 shrink-0 items-center rounded-md px-1 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+        tone === 'danger'
+          ? 'text-danger-400/75 hover:text-danger-400 focus-visible:outline-danger-400'
+          : 'text-accent-blue-soft hover:bg-accent-blue/10 focus-visible:outline-accent-blue'
+      }`}
     >
       {children}
-    </h2>
+    </button>
   );
+}
+
+function paymentStatus(payment: PlatformPaymentHistoryItem): {
+  label: string;
+  className: string;
+} {
+  if (payment.paid) {
+    return { label: 'Pago', className: 'text-accent-green' };
+  }
+  if (payment.status === 'awaiting_pix') {
+    return { label: 'Aguardando PIX', className: 'text-accent-blue-soft' };
+  }
+  if (payment.status === 'overdue') {
+    return { label: 'Vencido', className: 'text-danger-400' };
+  }
+  return { label: 'Pendente', className: 'text-warning-500' };
 }
 
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-sm font-medium leading-5 text-text-light/55">
+      <dt className="text-xs font-medium leading-4 text-text-light/60">
         {label}
       </dt>
-      <dd className="mt-1 break-words text-base font-semibold leading-6 text-text-light">
-        {value}
-      </dd>
-    </div>
-  );
-}
-
-function MetaRow({
-  label,
-  value,
-  stacked = false,
-}: {
-  label: string;
-  value: string;
-  stacked?: boolean;
-}) {
-  return (
-    <div
-      className={
-        stacked
-          ? 'flex flex-col gap-1 py-3.5 first:pt-0 last:pb-0'
-          : 'flex items-baseline justify-between gap-4 py-3.5 first:pt-0 last:pb-0'
-      }
-    >
-      <dt className="shrink-0 text-sm font-medium leading-5 text-text-light/55">
-        {label}
-      </dt>
-      <dd
-        className={`break-words text-base font-semibold leading-6 text-text-light ${
-          stacked ? '' : 'min-w-0 text-right'
-        }`}
-      >
+      <dd className="mt-1 break-words text-sm font-medium leading-5 text-text-light">
         {value}
       </dd>
     </div>
@@ -701,18 +518,6 @@ function PartnerStatusPill({ status }: { status: PartnerStatus }) {
       {labels[status]}
     </span>
   );
-}
-
-function formatAddress(address: PlatformClientDetail['address']): string {
-  const parts = [
-    address.street,
-    address.number,
-    address.neighborhood,
-    address.city,
-    address.uf,
-    address.cep,
-  ].filter(Boolean);
-  return parts.length ? parts.join(', ') : '—';
 }
 
 function getApiErrorMessage(error: unknown, fallback: string): string {

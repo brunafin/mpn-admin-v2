@@ -1,9 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { BsList, BsX } from 'react-icons/bs';
 import {
-  MdOutlineGroups,
+  MdOutlineDashboard,
   MdOutlineLogout,
   MdOutlinePayments,
+  MdOutlineSportsTennis,
 } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
 import { ADMIN_LOGO_URL } from '../../constants/brand';
@@ -13,29 +14,42 @@ type NavItem = {
   to: string;
   label: string;
   description: string;
-  Icon: typeof MdOutlineGroups;
+  Icon: typeof MdOutlineDashboard;
   iconClass: string;
   iconBgClass: string;
+  activeClass: string;
   match: (path: string) => boolean;
 };
 
 const navItems: NavItem[] = [
   {
-    to: '/clientes',
-    label: 'Clientes',
-    description: 'Arenas e donos',
-    Icon: MdOutlineGroups,
+    to: '/inicio',
+    label: 'Início',
+    description: 'Métricas e visão geral',
+    Icon: MdOutlineDashboard,
     iconClass: 'text-accent-blue',
     iconBgClass: 'bg-accent-blue/15',
-    match: (path) => path === '/clientes' || path.startsWith('/clientes/'),
+    activeClass: 'bg-accent-blue/12',
+    match: (path) => path === '/inicio',
+  },
+  {
+    to: '/quadras',
+    label: 'Quadras',
+    description: 'Arenas e donos',
+    Icon: MdOutlineSportsTennis,
+    iconClass: 'text-accent-green',
+    iconBgClass: 'bg-accent-green/15',
+    activeClass: 'bg-accent-green/12',
+    match: (path) => path === '/quadras' || path.startsWith('/quadras/'),
   },
   {
     to: '/planos',
     label: 'Planos',
     description: 'Mensalidades e catálogo',
     Icon: MdOutlinePayments,
-    iconClass: 'text-accent-green',
-    iconBgClass: 'bg-accent-green/15',
+    iconClass: 'text-accent-purple-soft',
+    iconBgClass: 'bg-accent-purple/15',
+    activeClass: 'bg-accent-purple/12',
     match: (path) => path === '/planos' || path.startsWith('/planos/'),
   },
 ];
@@ -72,19 +86,17 @@ function Header() {
     };
   }, [menuOpen]);
 
-  const getNavLinkClass = (isActive: boolean) =>
+  const getNavLinkClass = (isActive: boolean, activeClass: string) =>
     `flex min-h-16 items-center gap-3 rounded-xl px-3 py-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue ${
-      isActive
-        ? 'bg-master ring-1 ring-inset ring-accent-blue/40'
-        : 'bg-master/60 hover:bg-master active:bg-master'
+      isActive ? activeClass : 'hover:bg-text-light/8 active:bg-text-light/10'
     }`;
 
   return (
     <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-3 bg-master-light px-4 lg:hidden">
       <Link
-        to="/clientes"
+        to="/inicio"
         aria-label="MPN Admin — início"
-        className="flex h-12 w-20 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+        className="flex size-12 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
       >
         <img
           src={ADMIN_LOGO_URL}
@@ -124,7 +136,7 @@ function Header() {
           >
             <div className="px-4 pb-4 pt-4">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="flex h-14 w-24 shrink-0 items-center justify-center">
+                <div className="flex size-14 shrink-0 items-center justify-center">
                   <img
                     src={ADMIN_LOGO_URL}
                     alt=""
@@ -162,6 +174,7 @@ function Header() {
                     Icon,
                     iconClass,
                     iconBgClass,
+                    activeClass,
                     match,
                   }) => {
                     const isActive = match(location.pathname);
@@ -170,7 +183,7 @@ function Header() {
                         <Link
                           to={to}
                           aria-current={isActive ? 'page' : undefined}
-                          className={getNavLinkClass(isActive)}
+                          className={getNavLinkClass(isActive, activeClass)}
                         >
                           <span
                             className={`flex size-11 shrink-0 items-center justify-center rounded-full ${iconBgClass} ${iconClass}`}
@@ -193,7 +206,7 @@ function Header() {
               </ul>
             </nav>
 
-            <div className="border-t border-text-light/10 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
               <button
                 type="button"
                 className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-master-light px-4 text-base font-semibold text-text-light transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"

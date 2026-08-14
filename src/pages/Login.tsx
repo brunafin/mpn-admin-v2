@@ -13,7 +13,7 @@ import {
 import { isPlatformAdminToken } from '../components/ProtectedRoute';
 import { ADMIN_LOGO_URL } from '../constants/brand';
 
-export default function LoginPage() {
+function LoginPage() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +22,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (getAccessToken() && isPlatformAdminToken()) {
-      navigate('/clientes', { replace: true });
+      navigate('/inicio', { replace: true });
     }
   }, [navigate]);
 
@@ -44,7 +44,7 @@ export default function LoginPage() {
         setFormError('Esta conta não tem acesso ao portal da plataforma.');
         return;
       }
-      navigate('/clientes', { replace: true });
+      navigate('/inicio', { replace: true });
     } catch {
       setFormError('Usuário ou senha inválidos.');
     } finally {
@@ -56,36 +56,23 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-master px-4 py-10 text-text-light">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(37,84,160,0.18),_transparent_55%)]" />
-
-      <div className="relative z-10 w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-6 flex w-full max-w-[16rem] items-center justify-center sm:max-w-[18rem]">
-            <img
-              src={ADMIN_LOGO_URL}
-              alt="MPN Admin"
-              className="h-auto w-full object-contain"
-            />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-light">
-            Entrar
-          </h1>
-          <p className="mt-2 text-base leading-6 text-text-light/70">
-            Portal interno da plataforma
-          </p>
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex flex-col items-center">
+          <img
+            src={ADMIN_LOGO_URL}
+            alt="MPN Admin"
+            className="h-20 w-20 object-contain sm:h-24 sm:w-24"
+          />
+          <h1 className="sr-only">Entrar</h1>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-2xl bg-master-light p-5 sm:p-6"
-          noValidate
-        >
+        <form onSubmit={handleSubmit} noValidate>
           <Input
             name="username"
             title="E-mail ou usuário"
             placeholder="seu@email.com"
             type="text"
-            mode="dark"
+            mode="light"
             value={username}
             onChange={(e) => {
               setUsername(e.target.value);
@@ -101,7 +88,7 @@ export default function LoginPage() {
             title="Senha"
             placeholder="Sua senha"
             type="password"
-            mode="dark"
+            mode="light"
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
@@ -110,7 +97,6 @@ export default function LoginPage() {
             required
             autoComplete="current-password"
             enterKeyHint="go"
-            className="mt-1"
           />
 
           <button
@@ -118,7 +104,7 @@ export default function LoginPage() {
             disabled={!canSubmit}
             className={buttonClassName({
               variant: 'primary',
-              className: 'mt-6',
+              className: 'mt-4',
             })}
           >
             {loading ? 'Entrando…' : 'Entrar'}
@@ -128,3 +114,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default LoginPage;

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import {
   MdOutlineChevronRight,
   MdOutlineSearch,
-  MdSort,
 } from 'react-icons/md';
 import {
   listClients,
@@ -11,64 +10,30 @@ import {
   type PlatformClientListItem,
 } from '../api/clients';
 import AppLayout from '../components/AppLayout';
+import { cardClassName } from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import { ClientsListSkeleton } from '../components/Skeleton';
-import SortSheet from '../components/SortSheet';
 import { formatDate, formatDateTime } from '../utils/format';
-
-type SortOption = 'name' | 'created_at' | 'last_login_at' | 'status';
-
-const SORT_OPTIONS: Array<{
-  id: SortOption;
-  label: string;
-  description: string;
-}> = [
-  { id: 'name', label: 'A–Z', description: 'Nome da arena' },
-  { id: 'created_at', label: 'Criação', description: 'Mais recentes primeiro' },
-  {
-    id: 'last_login_at',
-    label: 'Último acesso',
-    description: 'Quem entrou por último',
-  },
-  {
-    id: 'status',
-    label: 'Status',
-    description: 'Ativo → onboarding → inativo',
-  },
-];
 
 export default function ClientsPage() {
   const [items, setItems] = useState<PlatformClientListItem[]>([]);
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<SortOption>('last_login_at');
-  const [sortOpen, setSortOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const params = useMemo(() => {
-    return {
-      q: search || undefined,
-      sort,
-      limit: 100,
-    };
-  }, [search, sort]);
-
-  const sortLabel =
-    SORT_OPTIONS.find((option) => option.id === sort)?.label ?? 'Ordenar';
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError('');
-    listClients(params)
+    listClients({ sort: 'name', limit: 100 })
       .then((data) => {
         if (cancelled) return;
         setItems(data.items);
       })
       .catch(() => {
         if (cancelled) return;
-        setError('Não foi possível carregar os clientes.');
+        setError('Não foi possível carregar as quadras.');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -76,7 +41,19 @@ export default function ClientsPage() {
     return () => {
       cancelled = true;
     };
-  }, [params]);
+  }, []);
+
+  const visibleItems = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return items;
+    return items.filter((item) => {
+      const haystack = [item.name, item.owner?.name]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [items, search]);
 
   function handleSearchSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -116,19 +93,6 @@ export default function ClientsPage() {
         </form>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
-          <div className="mb-3 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setSortOpen(true)}
-              aria-haspopup="dialog"
-              aria-expanded={sortOpen}
-              className="mpn-tap flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-master-light px-3 text-sm font-semibold text-text-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
-            >
-              <MdSort size={20} aria-hidden />
-              <span className="max-w-24 truncate">{sortLabel}</span>
-            </button>
-          </div>
-
           {error ? (
             <p
               className="mb-3 text-base font-medium text-danger-400"
@@ -140,25 +104,25 @@ export default function ClientsPage() {
 
           {loading && items.length === 0 ? <ClientsListSkeleton /> : null}
 
-          {!loading && items.length === 0 ? (
+          {!loading && visibleItems.length === 0 ? (
             <EmptyState
-              title="Nenhum cliente encontrado"
+              title="Nenhuma quadra encontrada"
               description="Ajuste a busca e tente de novo."
             />
           ) : null}
 
-          {items.length > 0 ? (
+          {visibleItems.length > 0 ? (
             <ul
-              className={`space-y-2 transition-opacity lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0 ${
+              className={`space-y-3 transition-opacity lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0 ${
                 loading ? 'opacity-60' : ''
               }`}
               aria-busy={loading}
             >
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <li key={`${item.kind}-${item.publicId}`}>
                   <Link
-                    to={`/clientes/${item.publicId}`}
-                    className="mpn-tap flex min-h-[4.5rem] items-center gap-3 rounded-2xl bg-master-light px-4 py-3.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+                    to={`/quadras/${item.publicId}`}
+                    className={`mpn-tap flex min-h-[4.5rem] items-center gap-3 ${cardClassName} px-5 py-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue`}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-2">
@@ -208,14 +172,6 @@ export default function ClientsPage() {
           ) : null}
         </div>
       </section>
-
-      <SortSheet
-        isOpen={sortOpen}
-        value={sort}
-        options={SORT_OPTIONS}
-        onChange={setSort}
-        onClose={() => setSortOpen(false)}
-      />
     </AppLayout>
   );
 }

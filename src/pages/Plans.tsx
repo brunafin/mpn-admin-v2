@@ -10,6 +10,7 @@ import {
 } from '../api/plans';
 import AppLayout from '../components/AppLayout';
 import Button from '../components/Button';
+import { cardClassName } from '../components/Card';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
@@ -102,7 +103,7 @@ export default function PlansPage() {
                     type="button"
                     onClick={() => setEditing(plan)}
                     aria-label={`Editar plano ${plan.name}`}
-                    className="mpn-tap relative flex w-full overflow-hidden rounded-2xl bg-master-light text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+                    className={`mpn-tap relative flex w-full overflow-hidden ${cardClassName} text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue`}
                   >
                     <div className="min-w-0 flex-1 px-4 py-4">
                       <div className="flex items-start justify-between gap-3">
@@ -111,7 +112,7 @@ export default function PlansPage() {
                             <p className="min-w-0 truncate text-lg font-semibold leading-6 text-text-light">
                               {plan.name}
                             </p>
-                            {plan.isTrialPlan || Number(plan.id) === 2 ? (
+                            {plan.isTrialPlan ? (
                               <span className="shrink-0 rounded-full bg-accent-blue/20 px-2.5 py-1 text-xs font-semibold text-accent-blue-soft">
                                 Plano trial
                               </span>
@@ -135,7 +136,7 @@ export default function PlansPage() {
                           <p className="text-xs font-medium uppercase tracking-wide text-text-light/45">
                             Mensalidade
                           </p>
-                          <p className="mt-1 truncate text-xl font-semibold tracking-tight text-text-light">
+                          <p className="mt-1 truncate text-xl font-semibold tabular-nums tracking-tight text-accent-blue">
                             {formatCurrencyBRL(Number(plan.basePrice))}
                           </p>
                         </div>
@@ -143,7 +144,7 @@ export default function PlansPage() {
                           <p className="text-xs font-medium uppercase tracking-wide text-text-light/45">
                             2ª quadra+
                           </p>
-                          <p className="mt-1 truncate text-xl font-semibold tracking-tight text-accent-green">
+                          <p className="mt-1 truncate text-xl font-semibold tabular-nums tracking-tight text-text-light">
                             +{formatCurrencyBRL(Number(plan.pricePerCourt))}
                           </p>
                         </div>
@@ -298,7 +299,7 @@ function PlanFormSheet({
   return (
     <FormSheet isOpen={isOpen} title={title} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-1">
-        {plan?.isTrialPlan || Number(plan?.id) === 2 ? (
+        {plan?.isTrialPlan ? (
           <p className="mb-3 rounded-xl bg-accent-blue/15 px-3 py-2.5 text-sm leading-5 text-accent-blue-soft">
             Plano trial — usado automaticamente nos 2 meses de teste após o
             onboarding.
