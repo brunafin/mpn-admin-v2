@@ -58,6 +58,15 @@ export type PlatformClientListItem = {
   } | null;
 };
 
+export type PlatformClientUsage = {
+  /** Reservas já ocorridas no mês civil atual (America/Sao_Paulo). */
+  pastReservations: number;
+  /** Reservas ainda por ocorrer no mês civil atual. */
+  futureReservations: number;
+  /** Horários fixos ativos (capacidade recorrente, sem recorte mensal). */
+  fixedSlots: number;
+};
+
 export type PlatformClientDetail = PlatformClientListItem & {
   phone: string | null;
   email: string | null;
@@ -83,6 +92,7 @@ export type PlatformClientDetail = PlatformClientListItem & {
   }>;
   paymentHistory: PlatformPaymentHistoryItem[];
   plan: (PlatformClientListItem['plan'] & { dayDue: number | null }) | null;
+  usage: PlatformClientUsage;
 };
 
 export type ListClientsResponse = {

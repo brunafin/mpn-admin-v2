@@ -6,9 +6,9 @@ import {
   type PlatformDashboard,
 } from '../api/dashboard';
 import AppLayout from '../components/AppLayout';
-import Card, { CardLabel, CardMetric } from '../components/Card';
+import Card, { CardHero, CardLabel, CardMetric } from '../components/Card';
 import { formatDate, formatDateTime } from '../utils/format';
-import { formatCurrencyBRL } from '../utils/formatCurrency';
+// import { formatCurrencyBRL } from '../utils/formatCurrency';
 
 const emptyDashboard: PlatformDashboard = {
   courts: 0,
@@ -70,12 +70,9 @@ export default function HomePage() {
               aria-label="Carregando indicadores"
               aria-busy="true"
             >
-              <Card className="animate-pulse">
-                <div className="flex items-end justify-between gap-3">
-                  <span className="block h-3 w-16 rounded bg-text-light/10" />
-                  <span className="block h-8 w-12 rounded bg-text-light/10" />
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4">
+              <Card className="animate-pulse overflow-hidden">
+                <div className="-mx-5 -mt-5 mb-4 h-16 rounded-t-3xl bg-text-light/10" />
+                <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4">
                   {Array.from({ length: 4 }).map((_, index) => (
                     <div key={index} className="space-y-1.5">
                       <span className="block h-3 w-10 rounded bg-text-light/10" />
@@ -101,17 +98,30 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <Card aria-labelledby="quadras-heading">
-                <div className="flex items-end justify-between gap-3">
-                  <CardLabel id="quadras-heading" as="h1">
-                    Quadras
-                  </CardLabel>
-                  <CardMetric className="mt-0 text-4xl leading-none" tone="green">
-                    {stats.courts}
-                  </CardMetric>
-                </div>
+              <Card
+                aria-labelledby="quadras-heading"
+                className="overflow-hidden"
+                tone="green"
+              >
+                <CardHero tone="green">
+                  <div className="flex items-end justify-between gap-3">
+                    <CardLabel
+                      id="quadras-heading"
+                      as="h1"
+                      className="text-white/80"
+                    >
+                      Quadras
+                    </CardLabel>
+                    <CardMetric
+                      className="mt-0 text-4xl leading-none"
+                      tone="white"
+                    >
+                      {stats.courts}
+                    </CardMetric>
+                  </div>
+                </CardHero>
 
-                <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4">
                   <Counter label="Ativas" value={stats.activeCourts} />
                   <Counter label="Em teste" value={stats.trialCourts} />
                   <Counter label="Cadastro" value={stats.onboarding} />
@@ -119,16 +129,27 @@ export default function HomePage() {
                 </div>
               </Card>
 
-              <Card aria-labelledby="trials-heading">
-                <div className="flex items-end justify-between gap-3">
-                  <CardLabel id="trials-heading">Trials em 7 dias</CardLabel>
-                  <CardMetric className="mt-0 text-4xl leading-none" tone="purple">
-                    {stats.trialsEndingSoon.length}
-                  </CardMetric>
-                </div>
+              <Card
+                aria-labelledby="trials-heading"
+                className="overflow-hidden"
+                tone="purple"
+              >
+                <CardHero tone="purple">
+                  <div className="flex items-end justify-between gap-3">
+                    <CardLabel id="trials-heading" className="text-white/80">
+                      Trials em 7 dias
+                    </CardLabel>
+                    <CardMetric
+                      className="mt-0 text-4xl leading-none"
+                      tone="white"
+                    >
+                      {stats.trialsEndingSoon.length}
+                    </CardMetric>
+                  </div>
+                </CardHero>
 
                 {stats.trialsEndingSoon.length > 0 ? (
-                  <ul className="mt-3 space-y-1">
+                  <ul className="space-y-1">
                     {stats.trialsEndingSoon.map((item) => (
                       <li key={item.publicId}>
                         <Link
@@ -153,21 +174,32 @@ export default function HomePage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-2 text-sm text-text-light/55">
+                  <p className="text-sm text-text-light/55">
                     Nenhum trial vence nesta semana.
                   </p>
                 )}
               </Card>
 
-              <Card aria-labelledby="reservas-heading">
-                <div className="flex items-end justify-between gap-3">
-                  <CardLabel id="reservas-heading">Reservas hoje</CardLabel>
-                  <CardMetric className="mt-0 text-4xl leading-none" tone="blue">
-                    {stats.reservationsToday}
-                  </CardMetric>
-                </div>
+              <Card
+                aria-labelledby="reservas-heading"
+                className="overflow-hidden"
+                tone="blue"
+              >
+                <CardHero tone="blue">
+                  <div className="flex items-end justify-between gap-3">
+                    <CardLabel id="reservas-heading" className="text-white/80">
+                      Reservas hoje
+                    </CardLabel>
+                    <CardMetric
+                      className="mt-0 text-4xl leading-none"
+                      tone="white"
+                    >
+                      {stats.reservationsToday}
+                    </CardMetric>
+                  </div>
+                </CardHero>
 
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Counter
                     label="Últimos 7 dias"
                     value={stats.reservationsLast7Days}
@@ -179,30 +211,48 @@ export default function HomePage() {
                 </div>
               </Card>
 
-              <Card aria-labelledby="receita-heading">
-                <div className="flex items-end justify-between gap-3">
-                  <CardLabel id="receita-heading">Receita /mês</CardLabel>
-                  <CardMetric className="mt-0 text-3xl leading-none" tone="purple">
-                    {formatCurrencyBRL(stats.monthlyRevenue)}
-                  </CardMetric>
-                </div>
-                <p className="mt-1 text-sm text-text-light/55">Contratada</p>
-                <div className="mt-3">
-                  <Counter
-                    label="Recebido no mês"
-                    valueLabel={formatCurrencyBRL(stats.receivedThisMonth)}
-                  />
-                </div>
+              {/* Receita /mês — fora da home por enquanto
+              <Card
+                aria-labelledby="receita-heading"
+                className="overflow-hidden"
+                tone="neutral"
+              >
+                <CardHero tone="neutral">
+                  <div className="flex items-end justify-between gap-3">
+                    <div className="min-w-0">
+                      <CardLabel id="receita-heading" className="text-white/80">
+                        Receita /mês
+                      </CardLabel>
+                      <p className="mt-0.5 text-sm text-white/65">Contratada</p>
+                    </div>
+                    <CardMetric
+                      className="mt-0 text-3xl leading-none"
+                      tone="white"
+                    >
+                      {formatCurrencyBRL(stats.monthlyRevenue)}
+                    </CardMetric>
+                  </div>
+                </CardHero>
+
+                <Counter
+                  label="Recebido no mês"
+                  valueLabel={formatCurrencyBRL(stats.receivedThisMonth)}
+                />
               </Card>
+              */}
 
               <section aria-labelledby="acessos-heading" className="pt-2">
                 <CardLabel id="acessos-heading">Últimos acessos</CardLabel>
                 {stats.recentLogins.length > 0 ? (
-                  <ul className="mt-2 space-y-2">
-                    {stats.recentLogins.map((item) => (
+                  <ul className="mt-2 overflow-hidden">
+                    {stats.recentLogins.map((item, index) => (
                       <li
                         key={`${item.publicId}-${item.lastLoginAt}`}
-                        className="flex items-baseline justify-between gap-3"
+                        className={`flex items-baseline justify-between gap-3 px-3 py-2.5 ${
+                          index % 2 === 0
+                            ? 'bg-accent-blue/8'
+                            : 'bg-white'
+                        }`}
                       >
                         <span className="min-w-0 truncate text-base text-text-light">
                           {item.arenaName ? (

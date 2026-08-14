@@ -54,45 +54,47 @@ export function ClientsListSkeleton({
 export function ClientDetailSkeleton({ className = '' }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse space-y-4 ${className}`}
+      className={`animate-pulse ${className}`}
       aria-label="Carregando informações"
       aria-busy="true"
     >
-      <div className={`${cardClassName} ${cardPaddingClassName}`}>
+      <div className="-mx-4 bg-text-light/90 px-4 pb-10 pt-5 lg:-mx-8 lg:px-8">
         <div className="flex items-center justify-between gap-3">
-          <SkeletonBone className="h-4 w-36" />
-          <SkeletonBone className="h-3 w-28" />
+          <SkeletonBone className="h-4 w-36 bg-white/20" />
+          <SkeletonBone className="h-3 w-28 bg-white/20" />
         </div>
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <div className="space-y-4">
-          <div className={`${cardClassName} ${cardPaddingClassName}`}>
-            <div className="flex items-center justify-between gap-3">
-              <SkeletonBone className="h-3 w-12" />
-              <SkeletonBone className="h-4 w-14" />
+      <div className="relative z-[1] -mt-6 space-y-4">
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <div className="space-y-4">
+            <div className={`${cardClassName} ${cardPaddingClassName}`}>
+              <div className="flex items-center justify-between gap-3">
+                <SkeletonBone className="h-3 w-12" />
+                <SkeletonBone className="h-4 w-14" />
+              </div>
+              <SkeletonBone className="mt-3 h-5 w-28" />
+              <SkeletonBone className="mt-2 h-4 w-32" />
             </div>
-            <SkeletonBone className="mt-3 h-7 w-28" />
-            <SkeletonBone className="mt-2 h-4 w-32" />
+            <div className={`${cardClassName} ${cardPaddingClassName}`}>
+              <div className="flex items-center justify-between gap-3">
+                <SkeletonBone className="h-3 w-20" />
+                <SkeletonBone className="h-4 w-16" />
+              </div>
+              <SkeletonBone className="mt-3 h-4 w-24" />
+              <SkeletonBone className="mt-3 h-8 w-full" />
+              <SkeletonBone className="mt-2 h-8 w-full" />
+            </div>
           </div>
           <div className={`${cardClassName} ${cardPaddingClassName}`}>
             <div className="flex items-center justify-between gap-3">
-              <SkeletonBone className="h-3 w-20" />
-              <SkeletonBone className="h-4 w-16" />
+              <SkeletonBone className="h-3 w-16" />
+              <SkeletonBone className="h-3 w-6" />
             </div>
-            <SkeletonBone className="mt-3 h-4 w-24" />
             <SkeletonBone className="mt-3 h-8 w-full" />
             <SkeletonBone className="mt-2 h-8 w-full" />
+            <SkeletonBone className="mt-2 h-8 w-full" />
           </div>
-        </div>
-        <div className={`${cardClassName} ${cardPaddingClassName}`}>
-          <div className="flex items-center justify-between gap-3">
-            <SkeletonBone className="h-3 w-16" />
-            <SkeletonBone className="h-3 w-6" />
-          </div>
-          <SkeletonBone className="mt-3 h-8 w-full" />
-          <SkeletonBone className="mt-2 h-8 w-full" />
-          <SkeletonBone className="mt-2 h-8 w-full" />
         </div>
       </div>
     </div>

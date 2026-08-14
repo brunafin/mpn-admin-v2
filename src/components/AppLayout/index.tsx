@@ -49,7 +49,7 @@ function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
 
   return (
-    <div className="flex min-h-dvh flex-col bg-master lg:h-dvh lg:overflow-hidden">
+    <div className="flex h-dvh flex-col overflow-hidden bg-master">
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <aside className="hidden w-56 shrink-0 flex-col bg-master-light lg:flex">
           <div className="flex items-center px-4 py-5">
