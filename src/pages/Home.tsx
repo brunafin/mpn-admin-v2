@@ -84,9 +84,15 @@ export default function HomePage() {
                   ))}
                 </div>
               </Card>
-              <Card className="h-24 animate-pulse" />
-              <Card className="h-24 animate-pulse" />
-              <Card className="h-20 animate-pulse" />
+              <Card className="h-24 animate-pulse">
+                <span className="sr-only">Carregando</span>
+              </Card>
+              <Card className="h-24 animate-pulse">
+                <span className="sr-only">Carregando</span>
+              </Card>
+              <Card className="h-20 animate-pulse">
+                <span className="sr-only">Carregando</span>
+              </Card>
               <div className="space-y-2 pt-2">
                 <span className="block h-3 w-28 rounded bg-text-light/10" />
                 <span className="block h-4 w-full rounded bg-text-light/10" />
