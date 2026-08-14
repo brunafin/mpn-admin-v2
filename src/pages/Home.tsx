@@ -32,22 +32,39 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError('');
-    getDashboard()
-      .then((data) => {
-        if (cancelled) return;
-        setStats(data);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setError('Não foi possível carregar os indicadores.');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+
+    const load = (opts?: { silent?: boolean }) => {
+      if (!opts?.silent) {
+        setLoading(true);
+        setError('');
+      }
+      getDashboard()
+        .then((data) => {
+          if (cancelled) return;
+          setStats(data);
+          setError('');
+        })
+        .catch(() => {
+          if (cancelled) return;
+          if (!opts?.silent) {
+            setError('Não foi possível carregar os indicadores.');
+          }
+        })
+        .finally(() => {
+          if (!cancelled && !opts?.silent) setLoading(false);
+        });
+    };
+
+    load();
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') load({ silent: true });
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
     return () => {
       cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, []);
 

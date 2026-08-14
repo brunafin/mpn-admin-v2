@@ -1,18 +1,40 @@
 import { format, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+const BRAZIL_TZ = 'America/Sao_Paulo';
+
+function toDate(value: string | Date): Date {
+  return typeof value === 'string' ? parseISO(value) : new Date(value);
+}
+
+/** dd/MM/yyyy HH:mm em America/Sao_Paulo (não depende do fuso do browser). */
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return '—';
-  const date = typeof value === 'string' ? parseISO(value) : new Date(value);
+  const date = toDate(value);
   if (!isValid(date)) return '—';
-  return format(date, "dd/MM/yyyy HH:mm", { locale: ptBR });
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: BRAZIL_TZ,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+    .format(date)
+    .replace(',', '');
 }
 
 export function formatDate(value: string | null | undefined): string {
   if (!value) return '—';
-  const date = typeof value === 'string' ? parseISO(value) : new Date(value);
+  const date = toDate(value);
   if (!isValid(date)) return '—';
-  return format(date, 'dd/MM/yyyy', { locale: ptBR });
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: BRAZIL_TZ,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
 }
 
 /** Competência: "janeiro de 2026" */
