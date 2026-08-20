@@ -11,9 +11,11 @@ import { formatDate, formatDateTime } from '../utils/format';
 // import { formatCurrencyBRL } from '../utils/formatCurrency';
 
 const emptyDashboard: PlatformDashboard = {
-  courts: 0,
-  activeCourts: 0,
-  trialCourts: 0,
+  clients: 0,
+  arenas: 0,
+  arenaOwners: 0,
+  activeArenas: 0,
+  trialArenas: 0,
   expiredArenas: 0,
   onboarding: 0,
   monthlyRevenue: 0,
@@ -116,31 +118,42 @@ export default function HomePage() {
           ) : (
             <div className="space-y-4">
               <Card
-                aria-labelledby="quadras-heading"
+                aria-labelledby="clientes-heading"
                 className="overflow-hidden"
                 tone="green"
               >
                 <CardHero tone="green">
-                  <div className="flex items-end justify-between gap-3">
-                    <CardLabel
-                      id="quadras-heading"
-                      as="h1"
-                      className="text-white/80"
-                    >
-                      Quadras
-                    </CardLabel>
-                    <CardMetric
-                      className="mt-0 text-4xl leading-none"
-                      tone="white"
-                    >
-                      {stats.courts}
-                    </CardMetric>
+                  <div className="flex items-end justify-between gap-6">
+                    <div className="min-w-0">
+                      <CardLabel
+                        id="clientes-heading"
+                        as="h1"
+                        className="text-white/80"
+                      >
+                        Clientes
+                      </CardLabel>
+                      <CardMetric
+                        className="mt-1 text-4xl leading-none"
+                        tone="white"
+                      >
+                        {stats.clients}
+                      </CardMetric>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <CardLabel className="text-white/80">Arenas</CardLabel>
+                      <CardMetric
+                        className="mt-1 text-4xl leading-none"
+                        tone="white"
+                      >
+                        {stats.arenas}
+                      </CardMetric>
+                    </div>
                   </div>
                 </CardHero>
 
                 <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4">
-                  <Counter label="Ativas" value={stats.activeCourts} />
-                  <Counter label="Em teste" value={stats.trialCourts} />
+                  <Counter label="Ativas" value={stats.activeArenas} />
+                  <Counter label="Em teste" value={stats.trialArenas} />
                   <Counter label="Cadastro" value={stats.onboarding} />
                   <Counter label="Expirados" value={stats.expiredArenas} />
                 </div>

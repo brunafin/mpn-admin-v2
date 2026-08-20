@@ -15,9 +15,11 @@ export type DashboardRecentLogin = {
 };
 
 export type PlatformDashboard = {
-  courts: number;
-  activeCourts: number;
-  trialCourts: number;
+  clients: number;
+  arenas: number;
+  arenaOwners: number;
+  activeArenas: number;
+  trialArenas: number;
   expiredArenas: number;
   onboarding: number;
   monthlyRevenue: number;
