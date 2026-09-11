@@ -1,21 +1,23 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import {
-  MdArrowBack,
-} from 'react-icons/md';
+import { MdArrowBack } from 'react-icons/md';
 import {
   createClientPayment,
   deleteClient,
   getClient,
   markClientPaymentPaid,
   updateClientPlan,
-  type PartnerStatus,
+  updateClientRepresentative,
   type PlatformClientDetail,
   type PlatformPaymentHistoryItem,
 } from '../api/clients';
 import { listPlans, type Plan } from '../api/plans';
-import AppLayout from '../components/AppLayout';
+import { listRepresentatives, type RepresentativeListItem } from '../api/representatives';
+import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
+import { isRepresentativeToken } from '../components/ProtectedRoute';
+import SellerCompanyPage from './SellerCompany';
+import { SituationBadge } from '../components/Badge';
 import Button from '../components/Button';
 import Card, { CardLabel } from '../components/Card';
 import FormSheet from '../components/FormSheet';
@@ -31,19 +33,27 @@ import {
   formatDateTime,
   formatMonthYear,
 } from '../utils/format';
+import { clientSituation } from '../utils/clientSituation';
 
 const WHATSAPP_BASE =
   import.meta.env.VITE_WHATSAPP_URL_BASE || 'https://wa.me/55';
 
 /**
- * Hierarquia (mobile-first, dona da plataforma):
- * 1. Arena + dono (faixa escura)
- * 2. Quadras (card)
+ * Hierarquia (dona da plataforma):
+ * 1. Arena + dono
+ * 2. Quadras
  * 3. Reservas
- * 4. Plano + pagamentos (faixa comercial)
+ * 4. Plano + pagamentos
  * 5. Zona de risco
  */
 export default function ClientDetailPage() {
+  if (isRepresentativeToken()) {
+    return <SellerCompanyPage />;
+  }
+  return <AdminClientDetailPage />;
+}
+
+function AdminClientDetailPage() {
   const { companyPublicId } = useParams<{ companyPublicId: string }>();
   const navigate = useNavigate();
   const [client, setClient] = useState<PlatformClientDetail | null>(null);
@@ -54,6 +64,7 @@ export default function ClientDetailPage() {
   const [markPaidPayment, setMarkPaidPayment] =
     useState<PlatformPaymentHistoryItem | null>(null);
   const [planSheetOpen, setPlanSheetOpen] = useState(false);
+  const [representativeSheetOpen, setRepresentativeSheetOpen] = useState(false);
   const [deleteSheetOpen, setDeleteSheetOpen] = useState(false);
   const [showAllPayments, setShowAllPayments] = useState(false);
 
@@ -98,53 +109,46 @@ export default function ClientDetailPage() {
   return (
     <AppLayout>
       <section
-        className={`mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-hidden bg-master text-text-light transition-opacity lg:max-w-5xl ${
+        className={`${PAGE_SHELL} transition-opacity ${
           loading && client ? 'opacity-80' : ''
         }`}
         aria-busy={loading}
       >
-        <div className="z-10 flex shrink-0 items-center gap-1 bg-master px-2 py-2 lg:px-6">
+        <div className="flex shrink-0 items-center gap-1 border-b border-border bg-surface px-2 py-1.5 lg:px-6">
           <Link
-            to="/quadras"
-            aria-label="Voltar para quadras"
-            className="mpn-tap flex size-11 shrink-0 items-center justify-center rounded-xl text-text-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+            to="/clientes"
+            aria-label="Voltar para clientes"
+            className="mpn-tap flex size-9 shrink-0 items-center justify-center rounded-md text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
           >
-            <MdArrowBack size={24} aria-hidden />
+            <MdArrowBack size={20} aria-hidden />
           </Link>
           <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
-            <p className="min-w-0 flex-1 truncate text-xl font-semibold tracking-tight text-text-light">
+            <p className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-fg">
               {client?.name || 'Detalhe'}
             </p>
             {client ? (
-              <PartnerStatusPill status={client.partnerStatus} />
+              <SituationBadge situation={clientSituation(client)} />
             ) : null}
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          {loading && !client ? (
-            <div className="px-4 pt-4 lg:px-8">
-              <ClientDetailSkeleton />
-            </div>
-          ) : null}
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 lg:px-8">
+          {loading && !client ? <ClientDetailSkeleton /> : null}
 
           {error ? (
-            <p
-              className="px-4 pt-4 text-base font-medium text-danger-400 lg:px-8"
-              role="alert"
-            >
+            <p className="text-sm font-medium text-danger" role="alert">
               {error}
             </p>
           ) : null}
 
           {client ? (
-            <>
+            <div className="space-y-4">
               {client.kind === 'onboarding' ||
               client.partnerStatus === 'expired' ||
               (client.owner && !client.owner.emailVerified) ? (
                 <p
                   role="status"
-                  className="mx-4 mt-4 rounded-3xl bg-warning-500/10 px-5 py-4 text-base leading-6 text-warning-500 lg:mx-8"
+                  className="rounded-md border border-warning/20 bg-warning-soft px-4 py-3 text-sm leading-5 text-warning"
                 >
                   {client.kind === 'onboarding'
                     ? 'Em cadastro — ainda sem estabelecimento no sistema.'
@@ -154,11 +158,14 @@ export default function ClientDetailPage() {
                 </p>
               ) : null}
 
-              <div className="bg-text-light px-4 pb-10 pt-5 text-white lg:px-8">
-                <h1 className="truncate text-2xl font-semibold tracking-tight text-white">
+              <Card aria-labelledby="arena-heading">
+                <h1
+                  id="arena-heading"
+                  className="truncate text-lg font-semibold tracking-tight text-fg"
+                >
                   {client.name}
                 </h1>
-                <div className="mt-3 flex items-start justify-between gap-3">
+                <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     {ownerPhoneDigits ? (
                       <a
@@ -166,211 +173,215 @@ export default function ClientDetailPage() {
                         target="_blank"
                         rel="noreferrer"
                         aria-label={`Abrir WhatsApp de ${client.owner?.name || 'dono'} — ${formatPhoneMask(client.owner?.phone || '')}`}
-                        className="mpn-tap block min-w-0 truncate rounded-lg text-base font-semibold text-white transition hover:text-accent-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                        className="mpn-tap block min-w-0 truncate rounded-md text-sm font-medium text-fg underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
                       >
                         {client.owner?.name || 'Sem nome'}
                       </a>
                     ) : (
-                      <p className="min-w-0 truncate text-base font-semibold text-white/90">
+                      <p className="min-w-0 truncate text-sm font-medium text-fg">
                         {client.owner?.name || 'Sem nome'}
                       </p>
                     )}
                     {client.isTrial ? (
-                      <p className="mt-0.5 text-base text-white/85">
+                      <p className="mt-0.5 text-sm text-fg-muted">
                         {client.trialEndsAt
                           ? `Trial até ${formatDate(client.trialEndsAt)}`
                           : 'Trial'}
                       </p>
                     ) : null}
                   </div>
-                  <span className="shrink-0 pt-0.5 text-base text-white/85">
+                  <span className="shrink-0 text-xs text-fg-muted">
                     Último acesso {formatDateTime(client.owner?.lastLoginAt)}
                   </span>
                 </div>
-              </div>
-
-              <div className="relative z-[1] -mt-6 space-y-4 px-4 lg:px-8">
                 {client.kind === 'company' ? (
-                  <>
-                    <Card
-                      aria-labelledby="quadras-heading"
-                      className="overflow-hidden !bg-master"
-                    >
-                      <SectionLabel id="quadras-heading">Quadras</SectionLabel>
-                      <div
-                        className="mt-4 grid grid-cols-2 gap-4"
-                        aria-label={`${client.courtsCount} quadras no total, ${client.visibleCourtsCount} ativas no site`}
-                      >
-                        <div className="rounded-2xl bg-accent-blue/10 px-4 py-3">
-                          <p className="text-sm font-medium text-accent-blue">
-                            Total
-                          </p>
-                          <p className="mt-1 text-4xl font-semibold tabular-nums tracking-tight text-accent-blue">
-                            {client.courtsCount}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-accent-green/10 px-4 py-3">
-                          <p className="text-sm font-medium text-accent-green">
-                            Ativas
-                          </p>
-                          <p className="mt-1 text-4xl font-semibold tabular-nums tracking-tight text-accent-green">
-                            {client.visibleCourtsCount}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <section aria-labelledby="reservas-heading" className="px-1 text-center">
-                      <SectionLabel id="reservas-heading">
-                        Reservas deste mês
-                      </SectionLabel>
-                      <p
-                        className="mt-2 text-base font-semibold text-text-light"
-                        aria-label="Reservas do mês atual"
-                      >
-                        <span className="text-accent-green">
-                          Passadas {client.usage?.pastReservations ?? 0}
-                        </span>
-                        <span className="mx-2 text-text-light/35" aria-hidden>
-                          |
-                        </span>
-                        <span className="text-accent-blue">
-                          Futuras {client.usage?.futureReservations ?? 0}
-                        </span>
-                        <span className="mx-2 text-text-light/35" aria-hidden>
-                          |
-                        </span>
-                        <span className="text-accent-purple-soft">
-                          Fixos {client.usage?.fixedSlots ?? 0}
-                        </span>
-                      </p>
-                    </section>
-
-                    <section
-                      aria-labelledby="comercial-heading"
-                      className="-mx-4 bg-master-light px-4 py-5 lg:-mx-8 lg:px-8"
-                    >
-                      <header className="flex items-center justify-between gap-3">
-                        <SectionLabel id="comercial-heading">
-                          Plano
-                        </SectionLabel>
-                        <TextAction onClick={() => setPlanSheetOpen(true)}>
-                          Alterar
-                        </TextAction>
-                      </header>
-                      <p className="mt-3 text-base font-semibold tabular-nums text-text-light">
-                        {formatCurrencyBRL(Number(client.monthlyFee ?? 0))}
-                        <span className="ms-1 font-medium text-text-light/70">
-                          /mês
-                        </span>
-                      </p>
-                      <p className="mt-1 text-base text-text-light">
-                        {client.plan?.name || 'Sem plano'}
-                      </p>
-
-                      <header className="mt-6 flex items-center justify-between gap-3">
-                        <SectionLabel id="pagamentos-heading">
-                          Pagamentos
-                        </SectionLabel>
-                        <TextAction onClick={() => setAddMonthOpen(true)}>
-                          Adicionar
-                        </TextAction>
-                      </header>
-
-                      <p className="mt-2 text-base font-semibold text-text-light">
-                        {formatCurrencyBRL(totalReceived)}{' '}
-                        <span className="font-medium text-text-light/70">
-                          recebido
-                        </span>
-                      </p>
-
-                      {paymentHistory.length === 0 ? (
-                        <p className="mt-3 text-base text-text-light/70">
-                          Nenhum pagamento registrado.
-                        </p>
-                      ) : (
-                        <>
-                          <ol className="relative mt-4 ms-1.5 border-s border-text-light/25 ps-5">
-                            {visiblePayments.map((payment) => {
-                              const status = paymentStatus(payment);
-                              return (
-                                <li
-                                  key={payment.id}
-                                  className="relative pb-5 last:pb-0"
-                                >
-                                  <span
-                                    className={`absolute -start-[1.4rem] top-1.5 size-2.5 rounded-full ${
-                                      payment.paid
-                                        ? 'bg-accent-green'
-                                        : payment.status === 'overdue'
-                                          ? 'bg-danger-400'
-                                          : 'bg-accent-blue'
-                                    }`}
-                                    aria-hidden
-                                  />
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0">
-                                      <p className="truncate text-base font-semibold capitalize text-text-light">
-                                        {formatMonthYear(payment.dueDate)}
-                                      </p>
-                                      <p className="mt-0.5 text-base tabular-nums text-text-light">
-                                        {formatCurrencyBRL(Number(payment.value))}
-                                      </p>
-                                    </div>
-                                    <div className="flex shrink-0 items-center gap-2">
-                                      <span
-                                        className={`text-base font-semibold ${status.className}`}
-                                      >
-                                        {status.label}
-                                      </span>
-                                      {!payment.paid ? (
-                                        <TextAction
-                                          onClick={() =>
-                                            setMarkPaidPayment(payment)
-                                          }
-                                        >
-                                          Marcar
-                                        </TextAction>
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                </li>
-                              );
-                            })}
-                          </ol>
-                          {hasMorePayments ? (
-                            <div className="mt-1">
-                              <TextAction
-                                onClick={() =>
-                                  setShowAllPayments((open) => !open)
-                                }
-                              >
-                                {showAllPayments
-                                  ? 'Ver menos'
-                                  : `Ver mais (${paymentHistory.length - 3})`}
-                              </TextAction>
-                            </div>
-                          ) : null}
-                        </>
-                      )}
-                    </section>
-                  </>
+                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+                    <p className="min-w-0 truncate text-sm text-fg-muted">
+                      Representante{' '}
+                      <span className="text-fg">
+                        {client.representative?.name?.trim() || '—'}
+                      </span>
+                    </p>
+                    <TextAction onClick={() => setRepresentativeSheetOpen(true)}>
+                      {client.representative?.name?.trim() ? 'Alterar' : 'Definir'}
+                    </TextAction>
+                  </div>
                 ) : null}
+              </Card>
 
-                <div className="mt-10 border-t border-danger-400/20 pt-8">
-                  <p className="mb-3 text-base text-text-light/70">
-                    Zona de risco
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setDeleteSheetOpen(true)}
-                    className="mpn-tap flex min-h-11 w-full items-center justify-center rounded-2xl bg-danger-400/10 px-4 text-base font-semibold text-danger-400 transition hover:bg-danger-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger-400"
-                  >
-                    Excluir cliente
-                  </button>
-                </div>
+              {client.kind === 'company' ? (
+                <>
+                  <section aria-labelledby="quadras-heading">
+                    <CardLabel id="quadras-heading">Quadras</CardLabel>
+                    <div
+                      className="mt-2 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border"
+                      aria-label={`${client.courtsCount} quadras no total, ${client.visibleCourtsCount} ativas no site`}
+                    >
+                      <div className="bg-surface px-4 py-3">
+                        <p className="text-xs text-fg-muted">Total</p>
+                        <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-fg">
+                          {client.courtsCount}
+                        </p>
+                      </div>
+                      <div className="bg-surface px-4 py-3">
+                        <p className="text-xs text-fg-muted">Ativas</p>
+                        <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-fg">
+                          {client.visibleCourtsCount}
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section aria-labelledby="reservas-heading">
+                    <CardLabel id="reservas-heading">
+                      Reservas deste mês
+                    </CardLabel>
+                    <p
+                      className="mt-2 text-sm text-fg"
+                      aria-label="Reservas do mês atual"
+                    >
+                      Passadas {client.usage?.pastReservations ?? 0}
+                      <span className="mx-2 text-border" aria-hidden>
+                        |
+                      </span>
+                      Futuras {client.usage?.futureReservations ?? 0}
+                      <span className="mx-2 text-border" aria-hidden>
+                        |
+                      </span>
+                      Fixos {client.usage?.fixedSlots ?? 0}
+                    </p>
+                  </section>
+
+                  <Card aria-labelledby="comercial-heading">
+                    <header className="flex items-center justify-between gap-3">
+                      <CardLabel id="comercial-heading">Plano</CardLabel>
+                      <TextAction onClick={() => setPlanSheetOpen(true)}>
+                        Alterar
+                      </TextAction>
+                    </header>
+                    <p className="mt-2 text-sm font-medium tabular-nums text-fg">
+                      {formatCurrencyBRL(Number(client.monthlyFee ?? 0))}
+                      <span className="ms-1 font-normal text-fg-muted">
+                        /mês
+                      </span>
+                    </p>
+                    <p className="mt-0.5 text-sm text-fg-muted">
+                      {client.plan?.name || 'Sem plano'}
+                    </p>
+
+                    <header className="mt-6 flex items-center justify-between gap-3 border-t border-border pt-4">
+                      <CardLabel id="pagamentos-heading">Pagamentos</CardLabel>
+                      <TextAction onClick={() => setAddMonthOpen(true)}>
+                        Adicionar
+                      </TextAction>
+                    </header>
+
+                    <p className="mt-2 text-sm font-medium text-fg">
+                      {formatCurrencyBRL(totalReceived)}{' '}
+                      <span className="font-normal text-fg-muted">
+                        recebido
+                      </span>
+                    </p>
+
+                    {paymentHistory.length === 0 ? (
+                      <p className="mt-3 text-sm text-fg-muted">
+                        Nenhum pagamento registrado.
+                      </p>
+                    ) : (
+                      <>
+                        <ol className="relative mt-4 ms-1.5 border-s border-border ps-5">
+                          {visiblePayments.map((payment) => {
+                            const status = paymentStatus(payment);
+                            return (
+                              <li
+                                key={payment.id}
+                                className="relative pb-4 last:pb-0"
+                              >
+                                <span
+                                  className={`absolute -start-[1.35rem] top-1.5 size-2 rounded-full ${
+                                    payment.paid
+                                      ? 'bg-success'
+                                      : payment.status === 'overdue'
+                                        ? 'bg-danger'
+                                        : 'bg-fg-muted'
+                                  }`}
+                                  aria-hidden
+                                />
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium capitalize text-fg">
+                                      {formatMonthYear(payment.dueDate)}
+                                    </p>
+                                    <p className="mt-0.5 text-sm tabular-nums text-fg-muted">
+                                      {formatCurrencyBRL(Number(payment.value))}
+                                    </p>
+                                  </div>
+                                  <div className="flex shrink-0 items-center gap-2">
+                                    <span
+                                      className={`text-xs font-medium ${status.className}`}
+                                    >
+                                      {status.label}
+                                    </span>
+                                    {!payment.paid ? (
+                                      <TextAction
+                                        onClick={() =>
+                                          setMarkPaidPayment(payment)
+                                        }
+                                      >
+                                        Marcar
+                                      </TextAction>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ol>
+                        {hasMorePayments ? (
+                          <div className="mt-2">
+                            <TextAction
+                              onClick={() =>
+                                setShowAllPayments((open) => !open)
+                              }
+                            >
+                              {showAllPayments
+                                ? 'Ver menos'
+                                : `Ver mais (${paymentHistory.length - 3})`}
+                            </TextAction>
+                          </div>
+                        ) : null}
+                      </>
+                    )}
+                  </Card>
+
+                  {client.commissions ? (
+                    <Card>
+                      <CardLabel>Comissão do representante</CardLabel>
+                      <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-fg">
+                        {formatCurrencyBRL(client.commissions.total)}
+                      </p>
+                      <p className="mt-1 text-sm text-fg-muted">
+                        {client.commissions.firstMonthPercent}% da 1ª ·{' '}
+                        {client.commissions.recurringPercent}% das seguintes
+                      </p>
+                    </Card>
+                  ) : null}
+                </>
+              ) : null}
+
+              <div className="border-t border-border pt-6">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-muted">
+                  Zona de risco
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setDeleteSheetOpen(true)}
+                  className="mpn-tap flex h-10 w-full items-center justify-center rounded-md border border-danger/25 px-4 text-sm font-medium text-danger transition hover:bg-danger-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
+                >
+                  Excluir cliente
+                </button>
               </div>
-            </>
+            </div>
           ) : null}
         </div>
       </section>
@@ -402,32 +413,27 @@ export default function ClientDetailPage() {
               }}
             />
           ) : null}
+          {client && client.kind === 'company' && companyPublicId ? (
+            <RepresentativeSheet
+              isOpen={representativeSheetOpen}
+              publicId={companyPublicId}
+              representative={client.representative}
+              onClose={() => setRepresentativeSheetOpen(false)}
+              onSaved={refreshClient}
+            />
+          ) : null}
           {client ? (
             <DeleteClientSheet
               isOpen={deleteSheetOpen}
               publicId={companyPublicId}
               client={client}
               onClose={() => setDeleteSheetOpen(false)}
-              onDeleted={() => navigate('/quadras', { replace: true })}
+              onDeleted={() => navigate('/clientes', { replace: true })}
             />
           ) : null}
         </>
       ) : null}
     </AppLayout>
-  );
-}
-
-function SectionLabel({
-  children,
-  id,
-}: {
-  children: ReactNode;
-  id?: string;
-}) {
-  return (
-    <CardLabel id={id} as="h2">
-      {children}
-    </CardLabel>
   );
 }
 
@@ -450,10 +456,10 @@ function TextAction({
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
-      className={`mpn-tap inline-flex min-h-8 shrink-0 items-center rounded-md px-1 text-base font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`mpn-tap inline-flex min-h-8 shrink-0 items-center rounded-md px-1 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
         tone === 'danger'
-          ? 'text-danger-400/75 hover:text-danger-400 focus-visible:outline-danger-400'
-          : 'text-accent-blue-soft hover:bg-accent-blue/10 focus-visible:outline-accent-blue'
+          ? 'text-danger hover:bg-danger-soft focus-visible:outline-danger'
+          : 'text-fg hover:bg-canvas focus-visible:outline-fg'
       }`}
     >
       {children}
@@ -466,38 +472,15 @@ function paymentStatus(payment: PlatformPaymentHistoryItem): {
   className: string;
 } {
   if (payment.paid) {
-    return { label: 'Pago', className: 'text-accent-green' };
+    return { label: 'Pago', className: 'text-success' };
   }
   if (payment.status === 'awaiting_pix') {
-    return { label: 'Aguardando PIX', className: 'text-accent-blue-soft' };
+    return { label: 'Aguardando PIX', className: 'text-fg-muted' };
   }
   if (payment.status === 'overdue') {
-    return { label: 'Vencido', className: 'text-danger-400' };
+    return { label: 'Vencido', className: 'text-danger' };
   }
-  return { label: 'Pendente', className: 'text-warning-500' };
-}
-
-function PartnerStatusPill({ status }: { status: PartnerStatus }) {
-  const styles: Record<PartnerStatus, string> = {
-    active: 'bg-accent-green/20 text-accent-green',
-    onboarding: 'bg-accent-blue/20 text-accent-blue-soft',
-    inactive: 'bg-text-light/10 text-text-light/55',
-    expired: 'bg-warning-500/20 text-warning-500',
-  };
-  const labels: Record<PartnerStatus, string> = {
-    active: 'Ativo',
-    onboarding: 'Onboarding',
-    inactive: 'Inativo',
-    expired: 'Expirado',
-  };
-
-  return (
-    <span
-      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${styles[status]}`}
-    >
-      {labels[status]}
-    </span>
-  );
+  return { label: 'Pendente', className: 'text-warning' };
 }
 
 function getApiErrorMessage(error: unknown, fallback: string): string {
@@ -578,7 +561,6 @@ function AddMonthSheet({
           }}
         />
         <Input
-          mode="dark"
           name="value"
           title="Valor"
           required
@@ -588,11 +570,11 @@ function AddMonthSheet({
           onChange={(event) => setValueInput(event.target.value)}
         />
         {formError ? (
-          <p className="mb-3 text-base font-medium text-danger-400" role="alert">
+          <p className="mb-3 text-sm font-medium text-danger" role="alert">
             {formError}
           </p>
         ) : null}
-        <Button type="submit" size="md" disabled={submitting}>
+        <Button type="submit" fullWidth disabled={submitting}>
           {submitting ? 'Salvando…' : 'Adicionar parcela'}
         </Button>
       </form>
@@ -660,15 +642,14 @@ function MarkPaidSheet({
     >
       <form onSubmit={handleSubmit} className="space-y-1">
         {payment ? (
-          <p className="mb-3 text-base leading-6 text-text-light/80">
+          <p className="mb-3 text-sm leading-5 text-fg-muted">
             Valor{' '}
-            <span className="font-semibold text-text-light">
+            <span className="font-medium text-fg">
               {formatCurrencyBRL(Number(payment.value))}
             </span>
           </p>
         ) : null}
         <Input
-          mode="dark"
           type="date"
           name="paidAt"
           title="Data do pagamento"
@@ -677,11 +658,11 @@ function MarkPaidSheet({
           onChange={(event) => setPaidAt(event.target.value)}
         />
         {formError ? (
-          <p className="mb-3 text-base font-medium text-danger-400" role="alert">
+          <p className="mb-3 text-sm font-medium text-danger" role="alert">
             {formError}
           </p>
         ) : null}
-        <Button type="submit" size="md" disabled={submitting || !payment}>
+        <Button type="submit" fullWidth disabled={submitting || !payment}>
           {submitting ? 'Salvando…' : 'Confirmar pagamento'}
         </Button>
       </form>
@@ -774,7 +755,6 @@ function AssignPlanSheet({
     <FormSheet isOpen={isOpen} title="Alterar plano" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-1">
         <Select
-          mode="dark"
           name="planId"
           title="Plano"
           required
@@ -787,7 +767,6 @@ function AssignPlanSheet({
           onChange={(event) => setPlanId(event.target.value)}
         />
         <Input
-          mode="dark"
           name="dayDue"
           title="Dia de vencimento"
           required
@@ -798,23 +777,22 @@ function AssignPlanSheet({
           }
         />
         {client.isTrial ? (
-          <label className="mb-3 flex min-h-11 items-center gap-3 text-base text-text-light">
+          <label className="mb-3 flex min-h-10 items-center gap-2.5 text-sm text-fg">
             <input
               type="checkbox"
               checked={endTrial}
               onChange={(event) => setEndTrial(event.target.checked)}
-              className="size-5 accent-accent-blue"
             />
             Encerrar trial agora
           </label>
         ) : null}
-        <p className="mb-3 text-base leading-6 text-text-light/75">
+        <p className="mb-3 text-sm leading-5 text-fg-muted">
           Mensalidade prevista:{' '}
-          <span className="font-semibold text-text-light">
+          <span className="font-medium text-fg">
             {formatCurrencyBRL(previewFee)}
           </span>
           {selectedPlan && !(client.isTrial && !endTrial) ? (
-            <span className="block text-text-light/70">
+            <span className="block text-fg-muted">
               {formatCurrencyBRL(selectedPlan.basePrice)} base
               {client.courtsCount > 1
                 ? ` + ${formatCurrencyBRL(selectedPlan.pricePerCourt)} × ${client.courtsCount - 1} extra${client.courtsCount - 1 === 1 ? '' : 's'}`
@@ -823,12 +801,94 @@ function AssignPlanSheet({
           ) : null}
         </p>
         {formError ? (
-          <p className="mb-3 text-base font-medium text-danger-400" role="alert">
+          <p className="mb-3 text-sm font-medium text-danger" role="alert">
             {formError}
           </p>
         ) : null}
-        <Button type="submit" size="md" disabled={submitting || loadingPlans}>
+        <Button type="submit" fullWidth disabled={submitting || loadingPlans}>
           {submitting ? 'Salvando…' : 'Salvar plano'}
+        </Button>
+      </form>
+    </FormSheet>
+  );
+}
+
+function RepresentativeSheet({
+  isOpen,
+  publicId,
+  representative,
+  onClose,
+  onSaved,
+}: {
+  isOpen: boolean;
+  publicId: string;
+  representative: PlatformClientDetail['representative'];
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const [sellers, setSellers] = useState<RepresentativeListItem[]>([]);
+  const [value, setValue] = useState(representative?.publicId ?? '');
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setValue(representative?.publicId ?? '');
+    setFormError('');
+    setSubmitting(false);
+    listRepresentatives()
+      .then((items) =>
+        setSellers(
+          items.filter(
+            (item) => item.status || item.publicId === representative?.publicId,
+          ),
+        ),
+      )
+      .catch(() =>
+        setFormError('Não foi possível carregar os representantes.'),
+      );
+  }, [isOpen, representative?.publicId]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setFormError('');
+    try {
+      await updateClientRepresentative(publicId, {
+        representativePublicId: value || null,
+      });
+      await onSaved();
+      onClose();
+    } catch (error) {
+      setFormError(
+        getApiErrorMessage(error, 'Não foi possível salvar o representante.'),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <FormSheet isOpen={isOpen} title="Representante" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-1">
+        <Select
+          name="representative"
+          title="Quem acompanha esta arena"
+          placeholder="Nenhum"
+          value={value}
+          options={sellers.map((seller) => ({
+            id: seller.publicId,
+            name: seller.name,
+          }))}
+          onChange={(event) => setValue(event.target.value)}
+        />
+        {formError ? (
+          <p className="mb-3 text-sm font-medium text-danger" role="alert">
+            {formError}
+          </p>
+        ) : null}
+        <Button type="submit" fullWidth disabled={submitting}>
+          {submitting ? 'Salvando…' : 'Salvar'}
         </Button>
       </form>
     </FormSheet>
@@ -889,16 +949,15 @@ function DeleteClientSheet({
   return (
     <FormSheet isOpen={isOpen} title="Excluir cliente" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-1">
-        <p className="mb-3 text-base leading-6 text-text-light/80">
+        <p className="mb-3 text-sm leading-5 text-fg-muted">
           Isso apaga{' '}
-          <span className="font-semibold text-text-light">{confirmName}</span>
+          <span className="font-medium text-fg">{confirmName}</span>
           {client.kind === 'company'
             ? `, ${client.courtsCount} quadra${client.courtsCount === 1 ? '' : 's'}, agendas, reservas e pagamentos`
             : ' e o cadastro em andamento'}
           . Não tem volta.
         </p>
         <Input
-          mode="dark"
           name="confirmName"
           title={`Digite “${confirmName}” para confirmar`}
           required
@@ -907,14 +966,14 @@ function DeleteClientSheet({
           onChange={(event) => setTypedName(event.target.value)}
         />
         {formError ? (
-          <p className="mb-3 text-base font-medium text-danger-400" role="alert">
+          <p className="mb-3 text-sm font-medium text-danger" role="alert">
             {formError}
           </p>
         ) : null}
         <Button
           type="submit"
           variant="danger"
-          size="md"
+          fullWidth
           disabled={submitting || !canConfirm}
         >
           {submitting ? 'Excluindo…' : 'Excluir definitivamente'}

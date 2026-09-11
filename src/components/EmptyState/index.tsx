@@ -18,13 +18,13 @@ function EmptyState({
     <div
       className={`flex flex-1 flex-col items-center justify-center px-6 py-16 ${className}`}
     >
-      <p className="text-center text-lg font-medium text-text-light">{title}</p>
+      <p className="text-center text-sm font-medium text-fg">{title}</p>
       {description && (
-        <p className="mt-2 max-w-xs text-center text-base leading-6 text-text-light/65">
+        <p className="mt-1.5 max-w-xs text-center text-sm leading-5 text-fg-muted">
           {description}
         </p>
       )}
-      {action && <div className="mt-5 flex w-full max-w-xs justify-center">{action}</div>}
+      {action && <div className="mt-4 flex w-full max-w-xs justify-center">{action}</div>}
     </div>
   );
 }
@@ -35,7 +35,7 @@ export function emptyStateActionClassName(extra = "") {
     variant: "secondary",
     size: "md",
     fullWidth: false,
-    className: `px-5 ${extra}`.trim(),
+    className: extra,
   });
 }
 

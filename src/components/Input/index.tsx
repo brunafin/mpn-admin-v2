@@ -16,7 +16,6 @@ interface IInputProps {
   onClick?: (e: React.MouseEvent<HTMLInputElement>) => void;
   required?: boolean;
   readOnly?: boolean;
-  mode: "light" | "dark";
   className?: string;
   inputMode?:
     | "text"
@@ -51,7 +50,6 @@ function Input({
   onClick,
   required,
   readOnly = false,
-  mode = "light",
   inputMode,
   className,
   autoComplete,
@@ -60,7 +58,6 @@ function Input({
   describedBy,
   error,
 }: IInputProps) {
-  const isDark = mode === "dark";
   const isPassword = type === "password";
   const maskClarity =
     isPassword ||
@@ -73,30 +70,23 @@ function Input({
     [describedBy, errorId].filter(Boolean).join(" ") || undefined;
   const inputType = isPassword && showPassword ? "text" : type;
 
-  const fieldClass = `w-full min-h-14 rounded-xl px-4 py-3.5 text-lg font-medium leading-7 tracking-normal
-    focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+  const fieldClass = `mpn-field h-10 w-full rounded-md border bg-surface px-3 text-sm font-normal text-fg
+    placeholder:text-fg-muted
+    focus:outline-none focus-visible:ring-1 focus-visible:ring-fg
     disabled:cursor-not-allowed disabled:opacity-60
-    ${isPassword ? "pr-14" : ""}
-    ${
-      isDark
-        ? `mpn-field-dark border-0 bg-master text-text-light placeholder:font-normal placeholder:text-text-light/40 focus-visible:ring-accent-blue/80 focus-visible:ring-offset-master-light ${
-            error ? "ring-2 ring-danger-400" : ""
-          }`
-        : "border border-neutral-300 bg-neutral-100 text-neutral-800 transition-colors duration-150 ease-in-out hover:border-neutral-400 focus-visible:ring-neutral-400 focus-visible:ring-offset-neutral-100 placeholder:font-normal placeholder-neutral-400"
-    }`;
+    ${isPassword ? "pr-11" : ""}
+    ${error ? "border-danger" : "border-border"}`;
 
   return (
     <div className={`mb-3 flex flex-col ${className ?? ""}`}>
       {title && (
         <label
           htmlFor={name}
-          className={`mb-2 text-base font-semibold leading-6 ${
-            isDark ? "text-text-light" : "text-neutral-800"
-          }`}
+          className="mb-1.5 text-sm font-medium text-fg"
         >
           {title}
           {required && (
-            <span className="font-semibold text-accent-blue" aria-hidden="true">
+            <span className="font-medium text-fg-muted" aria-hidden="true">
               {" "}
               *
             </span>
@@ -131,16 +121,12 @@ function Input({
             onClick={() => setShowPassword((open) => !open)}
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
             aria-pressed={showPassword}
-            className={`absolute right-1.5 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-              isDark
-                ? "text-text-light/80 hover:bg-master-light focus-visible:outline-accent-blue"
-                : "text-neutral-600 hover:bg-neutral-200 focus-visible:outline-neutral-500"
-            }`}
+            className="absolute right-0.5 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-fg-muted transition hover:bg-canvas hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
           >
             {showPassword ? (
-              <MdVisibilityOff size={22} aria-hidden />
+              <MdVisibilityOff size={18} aria-hidden />
             ) : (
-              <MdVisibility size={22} aria-hidden />
+              <MdVisibility size={18} aria-hidden />
             )}
           </button>
         )}
@@ -149,7 +135,7 @@ function Input({
         <p
           id={errorId}
           role="alert"
-          className="mt-1.5 text-base font-medium text-danger-400"
+          className="mt-1.5 text-sm font-medium text-danger"
         >
           {error}
         </p>

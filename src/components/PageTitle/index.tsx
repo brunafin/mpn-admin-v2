@@ -1,6 +1,33 @@
 import type { ReactNode } from "react";
 
-/** Rótulo discreto em hubs com Header (ex.: Reservas, Minhas infos). */
+/** Título de página autenticada, com ação opcional à direita. */
+export function PageHeader({
+  title,
+  action,
+  children,
+  className = "",
+}: {
+  title: string;
+  action?: ReactNode;
+  children?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`shrink-0 px-4 pt-4 lg:px-8 lg:pt-6 ${className}`.trim()}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight text-fg">
+          {title}
+        </h1>
+        {action ? <div className="shrink-0">{action}</div> : null}
+      </div>
+      {children ? <div className="mt-3">{children}</div> : null}
+    </div>
+  );
+}
+
+/** @deprecated Preferir PageHeader. */
 export function PageEyebrow({
   children,
   className = "",
@@ -10,7 +37,7 @@ export function PageEyebrow({
 }) {
   return (
     <h2
-      className={`min-w-0 truncate px-0.5 text-sm font-semibold uppercase tracking-wider text-text-light/55 ${className}`}
+      className={`min-w-0 truncate text-lg font-semibold tracking-tight text-fg ${className}`}
     >
       {children}
     </h2>
@@ -31,7 +58,7 @@ export function PageTitle({
 }) {
   return (
     <Tag
-      className={`min-w-0 truncate text-xl font-semibold tracking-tight text-text-light ${
+      className={`min-w-0 truncate text-lg font-semibold tracking-tight text-fg ${
         align === "center" ? "text-center" : ""
       } ${className}`}
     >

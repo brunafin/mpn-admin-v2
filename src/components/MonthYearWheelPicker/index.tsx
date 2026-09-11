@@ -121,10 +121,10 @@ function WheelColumn<T extends string | number>({
                   behavior: 'smooth',
                 });
               }}
-              className={`flex w-full snap-center items-center justify-center text-lg transition-colors ${
+              className={`flex w-full snap-center items-center justify-center text-sm transition-colors ${
                 selected
-                  ? 'font-semibold text-text-light'
-                  : 'font-medium text-text-light/35'
+                  ? 'font-semibold text-fg'
+                  : 'font-medium text-fg-muted'
               }`}
               style={{ height: ITEM_HEIGHT }}
             >
@@ -150,24 +150,22 @@ export default function MonthYearWheelPicker({
 
   return (
     <div className="mb-3">
-      <p className="mb-2 text-base font-semibold leading-6 text-text-light">
-        Competência
-      </p>
+      <p className="mb-1.5 text-sm font-medium text-fg">Competência</p>
       <div
-        className="relative overflow-hidden rounded-2xl bg-master"
+        className="relative overflow-hidden rounded-md border border-border bg-surface"
         style={{ height: PICKER_HEIGHT }}
       >
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-2 top-1/2 z-10 h-11 -translate-y-1/2 rounded-xl bg-text-light/10 ring-1 ring-inset ring-text-light/10"
+          className="pointer-events-none absolute inset-x-2 top-1/2 z-10 h-11 -translate-y-1/2 rounded-md bg-canvas ring-1 ring-inset ring-border"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 z-20 h-16 bg-gradient-to-b from-master to-transparent"
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 h-16 bg-gradient-to-b from-surface to-transparent"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-16 bg-gradient-to-t from-master to-transparent"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-16 bg-gradient-to-t from-surface to-transparent"
         />
 
         <div className="relative z-0 flex h-full">

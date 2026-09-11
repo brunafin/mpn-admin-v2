@@ -14,7 +14,6 @@ interface ISelectProps {
   onBlur?: (e: React.FocusEvent<HTMLSelectElement>) => void;
   onFocus?: (e: React.FocusEvent<HTMLSelectElement>) => void;
   required?: boolean;
-  mode: "light" | "dark";
   className?: string;
   disabled?: boolean;
   placeholder?: string;
@@ -29,26 +28,19 @@ function Select({
   onBlur,
   onFocus,
   required,
-  mode = "light",
   className,
   disabled = false,
   placeholder = "Selecione...",
 }: ISelectProps) {
-  const isDark = mode === "dark";
   const hasValue = value !== undefined && value !== null && value !== "";
 
   return (
     <div className={`mb-3 flex flex-col ${className ?? ""}`}>
       {title && (
-        <label
-          htmlFor={name}
-          className={`mb-2 text-base font-semibold leading-6 ${
-            isDark ? "text-text-light" : "text-neutral-800"
-          }`}
-        >
+        <label htmlFor={name} className="mb-1.5 text-sm font-medium text-fg">
           {title}
           {required && (
-            <span className="font-semibold text-accent-blue" aria-hidden="true">
+            <span className="font-medium text-fg-muted" aria-hidden="true">
               {" "}
               *
             </span>
@@ -67,15 +59,10 @@ function Select({
           required={required}
           disabled={disabled}
           aria-required={required || undefined}
-          className={`w-full min-h-14 appearance-none rounded-xl px-4 py-3.5 pr-12 text-lg font-medium leading-7 transition-colors duration-150 ease-in-out
-            focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+          className={`h-10 w-full appearance-none rounded-md border border-border bg-surface px-3 pr-10 text-sm text-fg
+            focus:outline-none focus-visible:ring-1 focus-visible:ring-fg
             disabled:cursor-not-allowed disabled:opacity-60
-            ${
-              isDark
-                ? "mpn-field-dark border-0 bg-master text-text-light focus-visible:ring-accent-blue/80 focus-visible:ring-offset-master-light"
-                : "border border-neutral-300 bg-neutral-100 text-neutral-800 hover:border-neutral-400 focus-visible:ring-neutral-400 focus-visible:ring-offset-neutral-100"
-            }
-            ${!hasValue ? (isDark ? "font-normal text-text-light/40" : "font-normal text-neutral-400") : ""}
+            ${!hasValue ? "text-fg-muted" : ""}
           `}
         >
           <option value="" disabled={required}>
@@ -89,11 +76,11 @@ function Select({
         </select>
 
         <MdKeyboardArrowDown
-          size={28}
+          size={20}
           aria-hidden
-          className={`pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 ${
-            isDark ? "text-text-light" : "text-neutral-600"
-          } ${disabled ? "opacity-50" : ""}`}
+          className={`pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-fg-muted ${
+            disabled ? "opacity-50" : ""
+          }`}
         />
       </div>
     </div>

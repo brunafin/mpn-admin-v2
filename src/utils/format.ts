@@ -37,6 +37,23 @@ export function formatDate(value: string | null | undefined): string {
   }).format(date);
 }
 
+/** "agora" / "há 12 min" — para recorte da última hora. */
+export function formatMinutesAgo(
+  value: string | null | undefined,
+  now = new Date(),
+): string {
+  if (!value) return '—';
+  const date = toDate(value);
+  if (!isValid(date)) return '—';
+  const minutes = Math.max(
+    0,
+    Math.round((now.getTime() - date.getTime()) / 60000),
+  );
+  if (minutes < 1) return 'agora';
+  if (minutes === 1) return 'há 1 min';
+  return `há ${minutes} min`;
+}
+
 /** Competência: "janeiro de 2026" */
 export function formatMonthYear(value: string | null | undefined): string {
   if (!value) return '—';

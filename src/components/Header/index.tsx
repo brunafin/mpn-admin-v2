@@ -1,64 +1,18 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { BsList, BsX } from 'react-icons/bs';
-import {
-  MdOutlineDashboard,
-  MdOutlineLogout,
-  MdOutlinePayments,
-  MdOutlineSportsTennis,
-} from 'react-icons/md';
+import { MdOutlineLogout } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
 import { ADMIN_LOGO_URL } from '../../constants/brand';
+import { ADMIN_NAV, SELLER_NAV } from '../../constants/nav';
 import { logoutAndRedirect } from '../../utils/authCookie';
-
-type NavItem = {
-  to: string;
-  label: string;
-  description: string;
-  Icon: typeof MdOutlineDashboard;
-  iconClass: string;
-  iconBgClass: string;
-  activeClass: string;
-  match: (path: string) => boolean;
-};
-
-const navItems: NavItem[] = [
-  {
-    to: '/inicio',
-    label: 'Início',
-    description: 'Métricas e visão geral',
-    Icon: MdOutlineDashboard,
-    iconClass: 'text-accent-blue',
-    iconBgClass: 'bg-accent-blue/15',
-    activeClass: 'bg-accent-blue/12',
-    match: (path) => path === '/inicio',
-  },
-  {
-    to: '/quadras',
-    label: 'Quadras',
-    description: 'Arenas e donos',
-    Icon: MdOutlineSportsTennis,
-    iconClass: 'text-accent-green',
-    iconBgClass: 'bg-accent-green/15',
-    activeClass: 'bg-accent-green/12',
-    match: (path) => path === '/quadras' || path.startsWith('/quadras/'),
-  },
-  {
-    to: '/planos',
-    label: 'Planos',
-    description: 'Mensalidades e catálogo',
-    Icon: MdOutlinePayments,
-    iconClass: 'text-accent-purple-soft',
-    iconBgClass: 'bg-accent-purple/15',
-    activeClass: 'bg-accent-purple/12',
-    match: (path) => path === '/planos' || path.startsWith('/planos/'),
-  },
-];
+import { isRepresentativeToken } from '../ProtectedRoute';
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const location = useLocation();
+  const nav = isRepresentativeToken() ? SELLER_NAV : ADMIN_NAV;
 
   useEffect(() => {
     setMenuOpen(false);
@@ -86,17 +40,12 @@ function Header() {
     };
   }, [menuOpen]);
 
-  const getNavLinkClass = (isActive: boolean, activeClass: string) =>
-    `flex min-h-16 items-center gap-3 rounded-xl px-3 py-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue ${
-      isActive ? activeClass : 'hover:bg-text-light/8 active:bg-text-light/10'
-    }`;
-
   return (
-    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-3 bg-master-light px-4 lg:hidden">
+    <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-4 lg:hidden">
       <Link
         to="/inicio"
         aria-label="MPN Admin — início"
-        className="flex size-12 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+        className="flex size-8 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
       >
         <img
           src={ADMIN_LOGO_URL}
@@ -111,9 +60,9 @@ function Header() {
         aria-expanded={menuOpen}
         aria-haspopup="dialog"
         onClick={() => setMenuOpen(true)}
-        className="mpn-tap flex size-11 shrink-0 items-center justify-center rounded-xl text-text-light transition hover:bg-text-light/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+        className="mpn-tap flex size-9 shrink-0 items-center justify-center rounded-md text-fg transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
       >
-        <BsList size={26} aria-hidden />
+        <BsList size={20} aria-hidden />
       </button>
 
       {menuOpen && (
@@ -124,7 +73,7 @@ function Header() {
           <button
             type="button"
             aria-label="Fechar menu"
-            className="absolute inset-0 bg-black/75"
+            className="absolute inset-0 bg-black/40"
             onClick={() => setMenuOpen(false)}
           />
 
@@ -132,89 +81,73 @@ function Header() {
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="relative z-10 flex h-full w-[min(100%,20rem)] flex-col bg-master text-text-light shadow-2xl"
+            className="relative z-10 flex h-full w-[min(100%,18rem)] flex-col border-l border-border bg-surface text-fg"
           >
-            <div className="px-4 pb-4 pt-4">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="flex size-14 shrink-0 items-center justify-center">
-                  <img
-                    src={ADMIN_LOGO_URL}
-                    alt=""
-                    className="size-full object-contain"
-                  />
-                </div>
-                <h2 id={titleId} className="sr-only">
-                  Menu da plataforma
-                </h2>
-                <button
-                  ref={closeButtonRef}
-                  type="button"
-                  onClick={() => setMenuOpen(false)}
-                  aria-label="Fechar"
-                  className="flex size-11 shrink-0 items-center justify-center rounded-full bg-master-light text-text-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
-                >
-                  <BsX size={24} aria-hidden />
-                </button>
+            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <div className="flex size-8 shrink-0 items-center justify-center">
+                <img
+                  src={ADMIN_LOGO_URL}
+                  alt=""
+                  className="size-full object-contain"
+                />
               </div>
+              <h2 id={titleId} className="sr-only">
+                Menu da plataforma
+              </h2>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                aria-label="Fechar"
+                className="flex size-9 shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-canvas hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+              >
+                <BsX size={20} aria-hidden />
+              </button>
             </div>
 
             <nav
               aria-label="Menu principal"
-              className="flex-1 overflow-y-auto px-4 py-4"
+              className="flex-1 overflow-y-auto px-2 py-3"
             >
-              <p className="mb-2 px-1 text-sm font-semibold uppercase tracking-wide text-text-light/55">
-                Navegação
-              </p>
-              <ul className="flex flex-col gap-2">
-                {navItems.map(
-                  ({
-                    to,
-                    label,
-                    description,
-                    Icon,
-                    iconClass,
-                    iconBgClass,
-                    activeClass,
-                    match,
-                  }) => {
-                    const isActive = match(location.pathname);
-                    return (
-                      <li key={to}>
-                        <Link
-                          to={to}
-                          aria-current={isActive ? 'page' : undefined}
-                          className={getNavLinkClass(isActive, activeClass)}
-                        >
-                          <span
-                            className={`flex size-11 shrink-0 items-center justify-center rounded-full ${iconBgClass} ${iconClass}`}
-                          >
-                            <Icon size={22} aria-hidden />
+              <ul className="flex flex-col gap-0.5">
+                {nav.map(({ to, label, description, Icon, match }) => {
+                  const isActive = match(location.pathname);
+                  return (
+                    <li key={to}>
+                      <Link
+                        to={to}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`flex min-h-11 items-center gap-3 rounded-md px-2.5 py-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg ${
+                          isActive
+                            ? 'bg-canvas text-fg'
+                            : 'text-fg-muted hover:bg-canvas hover:text-fg'
+                        }`}
+                      >
+                        <Icon size={18} className="shrink-0" aria-hidden />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-fg">
+                            {label}
                           </span>
-                          <span className="min-w-0">
-                            <span className="block text-lg font-semibold leading-6 text-text-light">
-                              {label}
-                            </span>
-                            <span className="block truncate text-sm text-text-light/65">
-                              {description}
-                            </span>
+                          <span className="block truncate text-xs text-fg-muted">
+                            {description}
                           </span>
-                        </Link>
-                      </li>
-                    );
-                  },
-                )}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </nav>
 
-            <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="border-t border-border p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <button
                 type="button"
-                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-master-light px-4 text-base font-semibold text-text-light transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-md px-3 text-sm text-fg-muted transition hover:bg-canvas hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
                 onClick={() => {
                   void logoutAndRedirect();
                 }}
               >
-                <MdOutlineLogout size={20} aria-hidden />
+                <MdOutlineLogout size={16} aria-hidden />
                 Sair
               </button>
             </div>

@@ -5,18 +5,51 @@ import {
   type AdminTokenPayload,
 } from '../utils/authCookie';
 
-const PLATFORM_ADMIN = 'platform_admin';
+export const PLATFORM_ADMIN = 'platform_admin';
+export const REPRESENTATIVE = 'representative';
 
-export function isPlatformAdminToken(): boolean {
-  if (!getAccessToken()) return false;
+export type PortalRole = typeof PLATFORM_ADMIN | typeof REPRESENTATIVE;
+
+export function getPortalRole(): PortalRole | null {
+  if (!getAccessToken()) return null;
   const payload = getAccessTokenPayload<AdminTokenPayload>();
-  return payload?.role === PLATFORM_ADMIN;
+  if (payload?.role === PLATFORM_ADMIN) return PLATFORM_ADMIN;
+  if (payload?.role === REPRESENTATIVE) return REPRESENTATIVE;
+  return null;
 }
 
-/** Exige JWT de platform_admin. */
+export function isPlatformAdminToken(): boolean {
+  return getPortalRole() === PLATFORM_ADMIN;
+}
+
+export function isRepresentativeToken(): boolean {
+  return getPortalRole() === REPRESENTATIVE;
+}
+
+export function isPlatformPortalToken(): boolean {
+  return getPortalRole() != null;
+}
+
+/** Exige JWT de platform_admin ou representative. */
 export default function ProtectedRoute() {
-  if (!isPlatformAdminToken()) {
+  if (!isPlatformPortalToken()) {
     return <Navigate to="/" replace />;
+  }
+  return <Outlet />;
+}
+
+/** Só a dona da plataforma. */
+export function AdminOnlyRoute() {
+  if (!isPlatformAdminToken()) {
+    return <Navigate to="/inicio" replace />;
+  }
+  return <Outlet />;
+}
+
+/** Só o representante. */
+export function SellerOnlyRoute() {
+  if (!isRepresentativeToken()) {
+    return <Navigate to="/inicio" replace />;
   }
   return <Outlet />;
 }

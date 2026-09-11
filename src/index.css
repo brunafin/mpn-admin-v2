@@ -1,123 +1,86 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-100: #FFCAA4;
-  --color-primary-200: #FFBB8B;
-  --color-primary-300: #FDA05F;
-  --color-primary-400: #FF8733;
-  --color-primary-500: #F36602;
-  --color-primary-600: #CF5600;
-  --color-primary-700: #BA4E02;
-  --color-primary-800: #A54500;
-  --color-primary-900: #843700;
-  --color-secondary-100: #79BEFF;
-  --color-secondary-200: #61B1FC;
-  --color-secondary-300: #3D98FA;
-  --color-secondary-400: #1782F5;
-  --color-secondary-500: #142CCF;
-  --color-secondary-600: #0A1FAB;
-  --color-secondary-700: #001185;
-  --color-secondary-800: #020F6A;
-  --color-secondary-900: #081154;
-  --color-tertiary-50:#eaffe3;
-  --color-tertiary-100: #CFFFD1;
-  --color-tertiary-200: #B2E9B4;
-  --color-tertiary-300: #94DA96;
-  --color-tertiary-400: #76C77A;
-  --color-tertiary-500: #4CAF50;
-  --color-tertiary-600: #36973A;
-  --color-tertiary-700: #27852B;
-  --color-tertiary-800: #226A25;
-  --color-tertiary-900: #1A501C;
-  --color-neutral-100: #FBFBFB;
-  --color-neutral-200: #F1F1F1;
-  --color-neutral-300: #D3D7DE;
-  --color-neutral-400: #A6AEBE;
-  --color-neutral-500: #798294;
-  --color-neutral-600: #404B5F;
-  --color-neutral-700: #343950;
-  --color-neutral-800: #2C3043;
-  --color-neutral-900: #272932;
-  --color-neutral-950: #1d1e24;
-  --color-danger-400: #cf1448;
-  --color-danger-500: #F30202;
-  --color-danger-600: #b10000;
-  --color-warning-500: #FFBF00;
-  --color-warning-600: #F0C163;
-  --color-fixed-50: #e7e3f3;
-  --color-master: #081425;
-  --color-master-light: #0C1728;
-  --color-accent-blue: #2554A0;
-  --color-accent-blue-soft: #6B9AD4;
-  --color-accent-blue-bright: #3A6FB8;
-  --color-accent-purple: #7048A8;
-  --color-accent-purple-soft: #A78BDB;
-  --color-accent-purple-bright: #A084E0;
-  --color-accent-green: #34D399;
-  --color-accent-green-bar: #047857;
-  --color-danger-soft: #F87171;
-  --color-danger-bright: #FCA5A5;
-  --color-text-light: #D7E3FF;
+  --color-canvas: #fafafa;
+  --color-surface: #ffffff;
+  --color-border: #e5e5e5;
+  --color-fg: #171717;
+  --color-fg-muted: #737373;
+  --color-accent: #171717;
+  --color-success: #3f6b4a;
+  --color-success-soft: #eef5f0;
+  --color-warning: #9a6700;
+  --color-warning-soft: #f8f1e0;
+  --color-danger: #b42318;
+  --color-danger-soft: #f8e9e8;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+
   --breakpoint-xs: 300px;
+
+  /* Escala da marca — legado, sem uso neste portal */
+  --color-primary-100: #ffcaa4;
+  --color-primary-200: #ffbb8b;
+  --color-primary-300: #fda05f;
+  --color-primary-400: #ff8733;
+  --color-primary-500: #f36602;
+  --color-primary-600: #cf5600;
+  --color-primary-700: #ba4e02;
+  --color-primary-800: #a54500;
+  --color-primary-900: #843700;
 }
 
 :root {
-  font-family: Lato, sans-serif;
+  font-family: var(--font-sans);
   line-height: 1.5;
   font-weight: 400;
-  color: var(--color-text-light);
+  color: var(--color-fg);
+  color-scheme: light;
+  background-color: var(--color-canvas);
 }
 
 body {
   margin: 0;
   min-height: 100dvh;
-  background-color: var(--color-master);
-  color: var(--color-text-light);
-  color-scheme: light;
-  --color-master: #ffffff;
-  --color-master-light: #f3f5f9;
-  --color-text-light: #152033;
-  --color-accent-blue-soft: #2554a0;
-  --color-accent-blue-bright: #1e4585;
-  --color-accent-green: #059669;
-  --color-accent-purple-soft: #5b3d91;
-  --color-danger-soft: #dc2626;
-  --color-danger-bright: #b91c1c;
+  background-color: var(--color-canvas);
+  color: var(--color-fg);
 }
 
-/* Evita fundo claro do autofill do navegador nos campos escuros */
-@keyframes mpn-autofill-dark {
+@keyframes mpn-autofill {
   from,
   to {
-    color: var(--color-text-light);
-    -webkit-text-fill-color: var(--color-text-light);
-    caret-color: var(--color-text-light);
-    background-color: var(--color-master);
+    color: var(--color-fg);
+    -webkit-text-fill-color: var(--color-fg);
+    caret-color: var(--color-fg);
+    background-color: var(--color-surface);
     background-image: none;
-    box-shadow: 0 0 0 1000px var(--color-master) inset;
-    -webkit-box-shadow: 0 0 0 1000px var(--color-master) inset;
+    box-shadow: 0 0 0 1000px var(--color-surface) inset;
+    -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset;
   }
 }
 
-.mpn-field-dark:-webkit-autofill,
-.mpn-field-dark:-webkit-autofill:hover,
-.mpn-field-dark:-webkit-autofill:focus,
-.mpn-field-dark:-webkit-autofill:active {
-  color: var(--color-text-light) !important;
-  -webkit-text-fill-color: var(--color-text-light) !important;
-  caret-color: var(--color-text-light) !important;
-  background-color: var(--color-master) !important;
+.mpn-field:-webkit-autofill,
+.mpn-field:-webkit-autofill:hover,
+.mpn-field:-webkit-autofill:focus,
+.mpn-field:-webkit-autofill:active {
+  color: var(--color-fg) !important;
+  -webkit-text-fill-color: var(--color-fg) !important;
+  caret-color: var(--color-fg) !important;
+  background-color: var(--color-surface) !important;
   background-image: none !important;
   filter: none !important;
-  box-shadow: 0 0 0 1000px var(--color-master) inset !important;
-  -webkit-box-shadow: 0 0 0 1000px var(--color-master) inset !important;
-  animation: mpn-autofill-dark 0s forwards;
+  box-shadow: 0 0 0 1000px var(--color-surface) inset !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset !important;
+  animation: mpn-autofill 0s forwards;
   transition: background-color 99999s ease-out 0s !important;
 }
 
-/* Placeholder mais suave que o valor preenchido */
-.mpn-field-dark::placeholder {
-  color: color-mix(in srgb, var(--color-text-light) 40%, transparent);
+.mpn-field::placeholder {
+  color: var(--color-fg-muted);
   font-weight: 400;
   opacity: 1;
 }
@@ -127,52 +90,17 @@ button {
   transition:
     background-color 0.12s ease,
     color 0.12s ease,
-    filter 0.12s ease,
-    transform 0.12s ease,
+    border-color 0.12s ease,
     opacity 0.12s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Hover só em ponteiro fino — no touch o :hover “gruda” e esconde o feedback */
-@media (hover: hover) and (pointer: fine) {
-  button:hover:not(:active) {
-    filter: brightness(1.06);
-  }
-}
-
-/*
-  Feedback de toque sutil (ghost no chrome).
-  Overlay leve — sem scale agressivo, alinhado ao tom da marca.
-*/
 .mpn-tap {
   -webkit-tap-highlight-color: transparent;
-  transition:
-    background-color 0.12s ease,
-    filter 0.12s ease;
-}
-.mpn-tap:active:not(:disabled) {
-  background-color: color-mix(
-    in srgb,
-    var(--color-text-light) 12%,
-    transparent
-  ) !important;
-  filter: none !important;
 }
 
-/* Botões já escuros (fechar X) — clareia levemente no press */
-.mpn-tap-solid {
-  -webkit-tap-highlight-color: transparent;
-  transition:
-    background-color 0.12s ease,
-    filter 0.12s ease;
-}
-.mpn-tap-solid:active:not(:disabled) {
-  background-color: color-mix(
-    in srgb,
-    var(--color-text-light) 14%,
-    var(--color-master)
-  ) !important;
-  filter: none !important;
+.mpn-tap:active:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-fg) 6%, transparent);
 }
 
 input[type="radio"] {
@@ -180,30 +108,27 @@ input[type="radio"] {
 }
 
 input[type="checkbox"] {
-  width: 1.2rem;
-  height: 1.2rem;
+  width: 1rem;
+  height: 1rem;
   cursor: pointer;
   border-radius: 0.25rem;
-}
-
-input[type="checkbox"]:checked {
-  background-color: var(--color-primary-500);
+  accent-color: var(--color-fg);
 }
 
 ::-webkit-scrollbar {
-  width: 12px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #e4e8ef;
+  background: var(--color-canvas);
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #c5ccd8;
+  background-color: #d4d4d4;
   border-radius: 6px;
-  border: 3px solid #e4e8ef;
+  border: 2px solid var(--color-canvas);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #a8b2c3;
+  background-color: #a3a3a3;
 }

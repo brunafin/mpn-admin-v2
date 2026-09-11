@@ -15,9 +15,9 @@ function showTestEnvBanner(): boolean {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <div className="flex min-h-dvh flex-col bg-master">
+      <div className="flex min-h-dvh flex-col bg-canvas">
         {showTestEnvBanner() && (
-          <p className="shrink-0 bg-warning-500/90 px-3 py-1.5 text-center text-sm font-semibold text-master">
+          <p className="shrink-0 border-b border-border bg-canvas px-3 py-1 text-center text-xs font-medium text-fg-muted">
             Ambiente de teste — dados podem ser fictícios
           </p>
         )}

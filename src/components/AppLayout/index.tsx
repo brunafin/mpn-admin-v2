@@ -1,45 +1,14 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MdOutlineDashboard, MdOutlineLogout, MdOutlinePayments, MdOutlineSportsTennis } from 'react-icons/md';
+import { MdOutlineLogout } from 'react-icons/md';
 import { ADMIN_LOGO_URL } from '../../constants/brand';
+import { ADMIN_NAV, SELLER_NAV } from '../../constants/nav';
 import { logoutAndRedirect } from '../../utils/authCookie';
 import Header from '../Header';
+import { isRepresentativeToken } from '../ProtectedRoute';
 
-type NavItem = {
-  to: string;
-  label: string;
-  Icon: typeof MdOutlineDashboard;
-  match: (path: string) => boolean;
-  activeClass: string;
-  idleClass: string;
-};
-
-const navItems: NavItem[] = [
-  {
-    to: '/inicio',
-    label: 'Início',
-    Icon: MdOutlineDashboard,
-    match: (path) => path === '/inicio',
-    activeClass: 'bg-accent-blue/12 text-accent-blue',
-    idleClass: 'text-text-light/70 hover:bg-accent-blue/8 hover:text-accent-blue',
-  },
-  {
-    to: '/quadras',
-    label: 'Quadras',
-    Icon: MdOutlineSportsTennis,
-    match: (path) => path === '/quadras' || path.startsWith('/quadras/'),
-    activeClass: 'bg-accent-green/12 text-accent-green',
-    idleClass: 'text-text-light/70 hover:bg-accent-green/8 hover:text-accent-green',
-  },
-  {
-    to: '/planos',
-    label: 'Planos',
-    Icon: MdOutlinePayments,
-    match: (path) => path === '/planos' || path.startsWith('/planos/'),
-    activeClass: 'bg-accent-purple/12 text-accent-purple-soft',
-    idleClass: 'text-text-light/70 hover:bg-accent-purple/8 hover:text-accent-purple-soft',
-  },
-];
+export const PAGE_SHELL =
+  'mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-hidden bg-canvas text-fg';
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -47,16 +16,17 @@ type AppLayoutProps = {
 
 function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
+  const nav = isRepresentativeToken() ? SELLER_NAV : ADMIN_NAV;
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-master">
+    <div className="flex h-dvh flex-col overflow-hidden bg-canvas">
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <aside className="hidden w-56 shrink-0 flex-col bg-master-light lg:flex">
-          <div className="flex items-center px-4 py-5">
+        <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-surface lg:flex">
+          <div className="flex items-center px-4 py-4">
             <Link
               to="/inicio"
               aria-label="MPN Admin — início"
-              className="flex size-14 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+              className="flex size-10 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
             >
               <img
                 src={ADMIN_LOGO_URL}
@@ -66,20 +36,22 @@ function AppLayout({ children }: AppLayoutProps) {
             </Link>
           </div>
 
-          <nav aria-label="Navegação principal" className="flex-1 px-3 py-2">
-            <ul className="flex flex-col gap-1">
-              {navItems.map(({ to, label, Icon, match, activeClass, idleClass }) => {
+          <nav aria-label="Navegação principal" className="flex-1 px-2 py-1">
+            <ul className="flex flex-col gap-0.5">
+              {nav.map(({ to, label, Icon, match }) => {
                 const isActive = match(location.pathname);
                 return (
                   <li key={to}>
                     <Link
                       to={to}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue ${
-                        isActive ? activeClass : idleClass
+                      className={`flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg ${
+                        isActive
+                          ? 'bg-canvas font-medium text-fg'
+                          : 'font-normal text-fg-muted hover:bg-canvas hover:text-fg'
                       }`}
                     >
-                      <Icon size={20} className="shrink-0" aria-hidden />
+                      <Icon size={18} className="shrink-0" aria-hidden />
                       <span className="truncate">{label}</span>
                     </Link>
                   </li>
@@ -88,15 +60,15 @@ function AppLayout({ children }: AppLayoutProps) {
             </ul>
           </nav>
 
-          <div className="p-3">
+          <div className="border-t border-border p-2">
             <button
               type="button"
-              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-text-light/70 transition hover:bg-text-light/10 hover:text-text-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-md px-2.5 text-sm text-fg-muted transition hover:bg-canvas hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
               onClick={() => {
                 void logoutAndRedirect();
               }}
             >
-              <MdOutlineLogout size={18} aria-hidden />
+              <MdOutlineLogout size={16} aria-hidden />
               Sair
             </button>
           </div>

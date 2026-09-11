@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import axios from 'axios';
-import { MdAdd, MdOutlineChevronRight } from 'react-icons/md';
+import { MdAdd } from 'react-icons/md';
 import {
   createPlan,
   deletePlan,
@@ -8,13 +8,14 @@ import {
   updatePlan,
   type Plan,
 } from '../api/plans';
-import AppLayout from '../components/AppLayout';
+import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
+import { Badge } from '../components/Badge';
 import Button from '../components/Button';
-import { cardClassName } from '../components/Card';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
-import { PageEyebrow } from '../components/PageTitle';
+import ListRow from '../components/ListRow';
+import { PageHeader } from '../components/PageTitle';
 import { PlansListSkeleton } from '../components/Skeleton';
 import { formatCurrencyBRL } from '../utils/formatCurrency';
 
@@ -51,27 +52,27 @@ export default function PlansPage() {
 
   return (
     <AppLayout>
-      <section className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-hidden bg-master text-text-light lg:max-w-3xl">
-        <div className="flex shrink-0 items-center justify-between gap-3 px-4 pb-2 pt-3 lg:px-8 lg:pb-3 lg:pt-6">
-          <PageEyebrow>Planos</PageEyebrow>
-          <Button
-            type="button"
-            variant="primary"
-            size="md"
-            fullWidth={false}
-            className="shrink-0 min-h-11 px-3"
-            onClick={() => setCreateOpen(true)}
-          >
-            <MdAdd size={22} aria-hidden />
-            Novo
-          </Button>
-        </div>
+      <section className={PAGE_SHELL}>
+        <PageHeader
+          title="Planos"
+          action={
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setCreateOpen(true)}
+            >
+              <MdAdd size={16} aria-hidden />
+              Novo
+            </Button>
+          }
+        />
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-1 lg:px-8">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
           {loading && plans.length === 0 ? <PlansListSkeleton /> : null}
 
           {error ? (
-            <p className="mb-3 text-base font-medium text-danger-400" role="alert">
+            <p className="mb-3 text-sm font-medium text-danger" role="alert">
               {error}
             </p>
           ) : null}
@@ -94,63 +95,39 @@ export default function PlansPage() {
 
           {plans.length > 0 ? (
             <ul
-              className={`space-y-3 transition-opacity ${loading ? 'opacity-60' : ''}`}
+              className={`divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface transition-opacity ${
+                loading ? 'opacity-60' : ''
+              }`}
               aria-busy={loading}
             >
               {plans.map((plan) => (
                 <li key={plan.id}>
-                  <button
-                    type="button"
+                  <ListRow
                     onClick={() => setEditing(plan)}
                     aria-label={`Editar plano ${plan.name}`}
-                    className={`mpn-tap relative flex w-full overflow-hidden ${cardClassName} text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue`}
+                    title={plan.name}
+                    badge={
+                      plan.isTrialPlan ? (
+                        <Badge>Plano trial</Badge>
+                      ) : undefined
+                    }
+                    subtitle={plan.description || undefined}
                   >
-                    <div className="min-w-0 flex-1 px-4 py-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <p className="min-w-0 truncate text-lg font-semibold leading-6 text-text-light">
-                              {plan.name}
-                            </p>
-                            {plan.isTrialPlan ? (
-                              <span className="shrink-0 rounded-full bg-accent-blue/20 px-2.5 py-1 text-xs font-semibold text-accent-blue-soft">
-                                Plano trial
-                              </span>
-                            ) : null}
-                          </div>
-                          {plan.description ? (
-                            <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-text-light/65">
-                              {plan.description}
-                            </p>
-                          ) : null}
-                        </div>
-                        <MdOutlineChevronRight
-                          size={26}
-                          className="mt-0.5 shrink-0 text-text-light/35"
-                          aria-hidden
-                        />
+                    <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3">
+                      <div className="min-w-0">
+                        <p className="text-xs text-fg-muted">Mensalidade</p>
+                        <p className="mt-0.5 truncate text-sm font-medium tabular-nums text-fg">
+                          {formatCurrencyBRL(Number(plan.basePrice))}
+                        </p>
                       </div>
-
-                      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-text-light/10 pt-3.5">
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium uppercase tracking-wide text-text-light/45">
-                            Mensalidade
-                          </p>
-                          <p className="mt-1 truncate text-xl font-semibold tabular-nums tracking-tight text-accent-blue">
-                            {formatCurrencyBRL(Number(plan.basePrice))}
-                          </p>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium uppercase tracking-wide text-text-light/45">
-                            2ª quadra+
-                          </p>
-                          <p className="mt-1 truncate text-xl font-semibold tabular-nums tracking-tight text-text-light">
-                            +{formatCurrencyBRL(Number(plan.pricePerCourt))}
-                          </p>
-                        </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-fg-muted">2ª quadra+</p>
+                        <p className="mt-0.5 truncate text-sm font-medium tabular-nums text-fg">
+                          +{formatCurrencyBRL(Number(plan.pricePerCourt))}
+                        </p>
                       </div>
                     </div>
-                  </button>
+                  </ListRow>
                 </li>
               ))}
             </ul>
@@ -300,13 +277,12 @@ function PlanFormSheet({
     <FormSheet isOpen={isOpen} title={title} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-1">
         {plan?.isTrialPlan ? (
-          <p className="mb-3 rounded-xl bg-accent-blue/15 px-3 py-2.5 text-sm leading-5 text-accent-blue-soft">
+          <p className="mb-3 rounded-md border border-border bg-canvas px-3 py-2 text-sm leading-5 text-fg-muted">
             Plano trial — usado automaticamente nos 2 meses de teste após o
             onboarding.
           </p>
         ) : null}
         <Input
-          mode="dark"
           name="name"
           title="Nome"
           required
@@ -314,7 +290,6 @@ function PlanFormSheet({
           onChange={(event) => setName(event.target.value)}
         />
         <Input
-          mode="dark"
           name="description"
           title="Descrição"
           required
@@ -322,7 +297,6 @@ function PlanFormSheet({
           onChange={(event) => setDescription(event.target.value)}
         />
         <Input
-          mode="dark"
           name="basePrice"
           title="Mensalidade base"
           required
@@ -332,7 +306,6 @@ function PlanFormSheet({
           onChange={(event) => setBasePriceInput(event.target.value)}
         />
         <Input
-          mode="dark"
           name="pricePerCourt"
           title="A partir da 2ª quadra"
           required
@@ -342,18 +315,18 @@ function PlanFormSheet({
           onChange={(event) => setPerCourtInput(event.target.value)}
         />
         {formError ? (
-          <p className="mb-3 text-base font-medium text-danger-400" role="alert">
+          <p className="mb-3 text-sm font-medium text-danger" role="alert">
             {formError}
           </p>
         ) : null}
-        <Button type="submit" size="md" disabled={submitting || deleting}>
+        <Button type="submit" fullWidth disabled={submitting || deleting}>
           {submitting ? 'Salvando…' : 'Salvar'}
         </Button>
         {onDelete ? (
           <Button
             type="button"
-            variant="danger"
-            size="md"
+            variant="dangerOutline"
+            fullWidth
             className="mt-2"
             disabled={submitting || deleting}
             onClick={handleDelete}

@@ -5,11 +5,9 @@ export type ButtonVariant =
   | "secondary"
   | "danger"
   | "dangerOutline"
-  | "success"
-  | "purple"
   | "ghost";
 
-export type ButtonSize = "md" | "lg";
+export type ButtonSize = "sm" | "md";
 
 type ButtonClassOptions = {
   variant?: ButtonVariant;
@@ -19,25 +17,21 @@ type ButtonClassOptions = {
 };
 
 const sizeClass: Record<ButtonSize, string> = {
-  md: "min-h-12 rounded-xl px-4 text-base",
-  lg: "min-h-14 rounded-2xl px-4 text-lg",
+  sm: "h-9 rounded-md px-3 text-sm",
+  md: "h-10 rounded-md px-3.5 text-sm",
 };
 
 const variantClass: Record<ButtonVariant, string> = {
   primary:
-    "bg-accent-blue text-white hover:brightness-90 focus-visible:outline-white enabled:active:brightness-85",
+    "bg-accent text-white hover:bg-fg/90 focus-visible:outline-fg",
   secondary:
-    "border border-accent-blue-soft bg-master text-accent-blue-soft hover:bg-accent-blue/10 focus-visible:outline-accent-blue enabled:active:bg-accent-blue/20",
+    "border border-border bg-surface text-fg hover:bg-canvas focus-visible:outline-fg",
   danger:
-    "bg-danger-400 text-white hover:brightness-110 focus-visible:outline-danger-400 enabled:active:brightness-90",
+    "bg-danger text-white hover:bg-danger/90 focus-visible:outline-danger",
   dangerOutline:
-    "border border-danger-400/45 bg-transparent text-danger-400/90 hover:border-danger-400/70 hover:bg-danger-400/8 focus-visible:outline-danger-400/70 enabled:active:bg-danger-400/12",
-  success:
-    "bg-accent-green text-white hover:brightness-110 focus-visible:outline-accent-green enabled:active:brightness-90",
-  purple:
-    "bg-accent-purple text-white hover:brightness-110 focus-visible:outline-accent-purple enabled:active:brightness-90",
+    "border border-danger/30 bg-transparent text-danger hover:bg-danger-soft focus-visible:outline-danger",
   ghost:
-    "bg-transparent text-text-light hover:bg-text-light/10 focus-visible:outline-accent-blue enabled:active:bg-text-light/12",
+    "bg-transparent text-fg-muted hover:bg-canvas hover:text-fg focus-visible:outline-fg",
 };
 
 /**
@@ -46,12 +40,12 @@ const variantClass: Record<ButtonVariant, string> = {
  */
 export function buttonClassName({
   variant = "primary",
-  size = "lg",
-  fullWidth = true,
+  size = "md",
+  fullWidth = false,
   className = "",
 }: ButtonClassOptions = {}): string {
   return [
-    "inline-flex items-center justify-center gap-2 font-semibold transition",
+    "inline-flex items-center justify-center gap-1.5 font-medium transition",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
     "disabled:cursor-not-allowed disabled:opacity-50",
     sizeClass[size],
@@ -72,8 +66,8 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 function Button({
   variant = "primary",
-  size = "lg",
-  fullWidth = true,
+  size = "md",
+  fullWidth = false,
   className = "",
   type = "button",
   children,

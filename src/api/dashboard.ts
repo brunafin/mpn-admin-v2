@@ -29,6 +29,7 @@ export type PlatformDashboard = {
   arenasActiveThisWeek: number;
   trialsEndingSoon: DashboardTrialEndingSoon[];
   recentLogins: DashboardRecentLogin[];
+  lastHourLogins: DashboardRecentLogin[];
 };
 
 export async function getDashboard() {

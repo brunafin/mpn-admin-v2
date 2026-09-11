@@ -1,4 +1,5 @@
 import api from './axios';
+import type { CommissionSummary } from './representatives';
 
 export type PartnerStatus = 'onboarding' | 'active' | 'inactive' | 'expired';
 export type AccessMode = 'full' | 'read_only';
@@ -22,7 +23,7 @@ export type PlatformClientListItem = {
   city: string | null;
   uf: string | null;
   onPortal: boolean | null;
-  partnerStatus: PartnerStatus;
+  partnerStatus: PartnerStatus | null;
   trialEndsAt: string | null;
   firstAccessAt: string | null;
   isTrial: boolean;
@@ -55,6 +56,11 @@ export type PlatformClientListItem = {
     price: number;
     formOfPayment: string | null;
     paid: boolean;
+  } | null;
+  representative: {
+    publicId: string;
+    name: string;
+    phone: string | null;
   } | null;
 };
 
@@ -91,6 +97,7 @@ export type PlatformClientDetail = PlatformClientListItem & {
     price: number | null;
   }>;
   paymentHistory: PlatformPaymentHistoryItem[];
+  commissions: CommissionSummary | null;
   plan: (PlatformClientListItem['plan'] & { dayDue: number | null }) | null;
   usage: PlatformClientUsage;
 };
@@ -166,6 +173,17 @@ export async function updateClientAccess(
 ) {
   const response = await api.patch<PlatformClientDetail>(
     `/platform/clients/${publicId}/access`,
+    body,
+  );
+  return response.data;
+}
+
+export async function updateClientRepresentative(
+  publicId: string,
+  body: { representativePublicId: string | null },
+) {
+  const response = await api.patch<PlatformClientDetail>(
+    `/platform/clients/${publicId}/representative`,
     body,
   );
   return response.data;

@@ -54,7 +54,7 @@ export default function FormSheet({
       <button
         type="button"
         aria-label="Fechar"
-        className="absolute inset-0 bg-black/75"
+        className="absolute inset-0 bg-black/40"
         onClick={onClose}
       />
 
@@ -62,12 +62,12 @@ export default function FormSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 flex w-full max-w-sm flex-col rounded-t-3xl bg-master-light text-text-light shadow-2xl sm:rounded-2xl"
+        className="relative z-10 flex max-h-[min(92dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-t-lg border border-border bg-surface text-fg sm:rounded-lg"
       >
-        <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-text-light/20 sm:hidden" />
+        <div className="mx-auto mt-2 h-1 w-8 shrink-0 rounded-full bg-border sm:hidden" />
 
-        <div className="flex items-center justify-between gap-3 px-4 pb-0.5 pt-3 sm:pt-3.5">
-          <h2 id={titleId} className="text-base font-semibold text-text-light">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <h2 id={titleId} className="text-sm font-semibold text-fg">
             {title}
           </h2>
           <button
@@ -75,13 +75,13 @@ export default function FormSheet({
             type="button"
             onClick={onClose}
             aria-label="Fechar"
-            className="mpn-tap flex size-11 shrink-0 items-center justify-center rounded-full text-text-light/80 hover:bg-master hover:text-text-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+            className="mpn-tap flex size-9 shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-canvas hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
           >
-            <BsX size={22} aria-hidden />
+            <BsX size={20} aria-hidden />
           </button>
         </div>
 
-        <div className="px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
+        <div className="min-h-0 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
           {children}
         </div>
       </div>
