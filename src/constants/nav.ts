@@ -6,6 +6,7 @@ import {
   MdOutlinePercent,
   MdOutlinePerson,
   MdOutlineReceiptLong,
+  MdOutlineTravelExplore,
 } from 'react-icons/md';
 
 export const ADMIN_NAV = [
@@ -23,6 +24,14 @@ export const ADMIN_NAV = [
     Icon: MdOutlinePeopleAlt,
     match: (path: string) =>
       path === '/clientes' || path.startsWith('/clientes/'),
+  },
+  {
+    to: '/prospectos',
+    label: 'Prospectos',
+    description: 'Quadras no Google',
+    Icon: MdOutlineTravelExplore,
+    match: (path: string) =>
+      path === '/prospectos' || path.startsWith('/prospectos/'),
   },
   {
     to: '/representantes',

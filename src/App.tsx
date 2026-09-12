@@ -7,6 +7,8 @@ import LoginPage from './pages/Login';
 import HomePage from './pages/Home';
 import ClientsPage from './pages/Clients';
 import ClientDetailPage from './pages/ClientDetail';
+import ProspectsPage from './pages/Prospects';
+import ProspectDetailPage from './pages/ProspectDetail';
 import PlansPage from './pages/Plans';
 import CostsPage from './pages/Costs';
 import RepresentativesPage from './pages/Representatives';
@@ -32,6 +34,11 @@ export default function App() {
         />
         <Route element={<AdminOnlyRoute />}>
           <Route path="/clientes" element={<ClientsPage />} />
+          <Route path="/prospectos" element={<ProspectsPage />} />
+          <Route
+            path="/prospectos/:googlePlaceId"
+            element={<ProspectDetailPage />}
+          />
           <Route path="/planos" element={<PlansPage />} />
           <Route path="/custos" element={<CostsPage />} />
           <Route path="/representantes" element={<RepresentativesPage />} />

@@ -1,6 +1,8 @@
 import type { ClientSituation } from '../../utils/clientSituation';
 import { SITUATION_LABEL } from '../../utils/clientSituation';
 import type { PartnerStatus } from '../../api/clients';
+import type { OutreachStatus } from '../../api/prospects';
+import { OUTREACH_LABEL } from '../../api/prospects';
 
 export type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger';
 
@@ -49,6 +51,21 @@ const situationTone: Record<ClientSituation, BadgeTone> = {
 
 export function SituationBadge({ situation }: { situation: ClientSituation }) {
   return <Badge tone={situationTone[situation]}>{SITUATION_LABEL[situation]}</Badge>;
+}
+
+const outreachTone: Record<OutreachStatus, BadgeTone> = {
+  new: 'neutral',
+  contacted: 'warning',
+  waiting: 'warning',
+  interested: 'success',
+  won: 'success',
+  lost: 'danger',
+  competitor: 'danger',
+  skip: 'neutral',
+};
+
+export function OutreachBadge({ status }: { status: OutreachStatus }) {
+  return <Badge tone={outreachTone[status]}>{OUTREACH_LABEL[status]}</Badge>;
 }
 
 export default Badge;
