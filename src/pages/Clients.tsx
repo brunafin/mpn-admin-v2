@@ -7,15 +7,61 @@ import {
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
 import { SituationBadge } from '../components/Badge';
 import EmptyState from '../components/EmptyState';
-import ListRow from '../components/ListRow';
+import { fieldOutlineClass } from '../components/Input';
+import ListRow, { listClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import { ClientsListSkeleton } from '../components/Skeleton';
-import { clientSituation } from '../utils/clientSituation';
-import { formatDate, formatDateTime } from '../utils/format';
+import {
+  clientSituation,
+  SITUATION_LABEL,
+  type ClientSituation,
+} from '../utils/clientSituation';
+import { formatDateTime } from '../utils/format';
+
+type SortId = 'name' | 'last_login';
+
+const SORT_OPTIONS: Array<{ id: SortId; name: string }> = [
+  { id: 'name', name: 'Quadra' },
+  { id: 'last_login', name: 'Último acesso' },
+];
+
+const STATUS_OPTIONS: Array<{ id: '' | ClientSituation; name: string }> = [
+  { id: '', name: 'Todos os status' },
+  { id: 'active', name: SITUATION_LABEL.active },
+  { id: 'trial', name: SITUATION_LABEL.trial },
+  { id: 'expired', name: SITUATION_LABEL.expired },
+  { id: 'inactive', name: SITUATION_LABEL.inactive },
+  { id: 'onboarding', name: SITUATION_LABEL.onboarding },
+];
+
+async function fetchAllClients() {
+  const limit = 100;
+  const first = await listClients({ page: 1, limit, sort: 'name' });
+  const items = [...first.items];
+  const pages = Math.ceil(first.total / limit);
+  if (pages <= 1) return items;
+  const rest = await Promise.all(
+    Array.from({ length: pages - 1 }, (_, index) =>
+      listClients({ page: index + 2, limit, sort: 'name' }),
+    ),
+  );
+  for (const page of rest) items.push(...page.items);
+  return items;
+}
+
+function lastAccessTime(item: PlatformClientListItem) {
+  const value = item.owner?.lastLoginAt;
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? null : time;
+}
 
 export default function ClientsPage() {
   const [items, setItems] = useState<PlatformClientListItem[]>([]);
   const [q, setQ] = useState('');
+  const [sort, setSort] = useState<SortId>('name');
+  const [status, setStatus] = useState<'' | ClientSituation>('');
+  const [city, setCity] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -23,10 +69,10 @@ export default function ClientsPage() {
     let cancelled = false;
     setLoading(true);
     setError('');
-    listClients({ sort: 'name', limit: 100 })
+    fetchAllClients()
       .then((data) => {
         if (cancelled) return;
-        setItems(data.items);
+        setItems(data);
       })
       .catch(() => {
         if (cancelled) return;
@@ -40,39 +86,117 @@ export default function ClientsPage() {
     };
   }, []);
 
+  const cities = useMemo(() => {
+    const unique = new Map<string, string>();
+    for (const item of items) {
+      const name = item.city?.trim();
+      if (!name) continue;
+      const uf = item.uf?.trim() || '';
+      const id = uf ? `${name}|${uf}` : name;
+      unique.set(id, uf ? `${name}/${uf}` : name);
+    }
+    return [...unique.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) =>
+        a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }),
+      );
+  }, [items]);
+
   const visibleItems = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return items;
-    return items.filter((item) => {
-      const haystack = [item.name, item.owner?.name, item.city, item.representative?.name]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(term);
+    const [cityName, cityUf = ''] = city.split('|');
+    const filtered = items.filter((item) => {
+      if (status && clientSituation(item) !== status) return false;
+      if (city) {
+        if ((item.city?.trim() || '') !== cityName) return false;
+        if ((item.uf?.trim() || '') !== cityUf) return false;
+      }
+      if (!term) return true;
+      return (item.owner?.name || '').toLowerCase().includes(term);
     });
-  }, [items, q]);
+    return [...filtered].sort((a, b) => {
+      if (sort === 'last_login') {
+        const aTime = lastAccessTime(a);
+        const bTime = lastAccessTime(b);
+        if (aTime == null && bTime == null) {
+          return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
+        }
+        if (aTime == null) return 1;
+        if (bTime == null) return -1;
+        return bTime - aTime;
+      }
+      return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
+    });
+  }, [items, q, sort, status, city]);
 
   return (
     <AppLayout>
       <section className={PAGE_SHELL}>
         <PageHeader title="Clientes">
-          <div className="relative">
-            <label htmlFor="search" className="sr-only">
-              Buscar cliente, arena ou dono
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
+            <div className="relative">
+              <label htmlFor="gerente" className="sr-only">
+                Buscar pelo gerente
+              </label>
+              <input
+                id="gerente"
+                name="gerente"
+                type="search"
+                placeholder="Gerente"
+                value={q}
+                onChange={(event) => setQ(event.target.value)}
+                autoComplete="off"
+                className={`${fieldOutlineClass} w-full pe-11`}
+              />
+              <span className="pointer-events-none absolute right-0.5 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center text-fg-muted">
+                <MdOutlineSearch size={18} aria-hidden />
+              </span>
+            </div>
+            <label className="block">
+              <span className="sr-only">Ordenar</span>
+              <select
+                value={sort}
+                onChange={(event) => setSort(event.target.value as SortId)}
+                className={`${fieldOutlineClass} w-full`}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
             </label>
-            <input
-              id="search"
-              name="search"
-              type="search"
-              placeholder="Arena, dono ou cidade…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              autoComplete="off"
-              className="mpn-field h-10 w-full rounded-md border border-border bg-surface py-2 pe-11 ps-3 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:ring-1 focus-visible:ring-fg"
-            />
-            <span className="pointer-events-none absolute right-0.5 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center text-fg-muted">
-              <MdOutlineSearch size={18} aria-hidden />
-            </span>
+            <label className="block">
+              <span className="sr-only">Filtrar por status</span>
+              <select
+                value={status}
+                onChange={(event) =>
+                  setStatus(event.target.value as '' | ClientSituation)
+                }
+                className={`${fieldOutlineClass} w-full`}
+              >
+                {STATUS_OPTIONS.map((option) => (
+                  <option key={option.id || 'all'} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="sr-only">Filtrar por cidade</span>
+              <select
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                className={`${fieldOutlineClass} w-full`}
+              >
+                <option value="">Todas as cidades</option>
+                {cities.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         </PageHeader>
 
@@ -88,41 +212,24 @@ export default function ClientsPage() {
           {!loading && visibleItems.length === 0 ? (
             <EmptyState
               title="Nenhum cliente encontrado"
-              description="Ajuste a busca e tente de novo."
+              description="Ajuste a busca ou os filtros e tente de novo."
             />
           ) : null}
 
           {visibleItems.length > 0 ? (
-            <ul
-              className={`divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface transition-opacity ${
-                loading ? 'opacity-60' : ''
-              }`}
-              aria-busy={loading}
-            >
-              {visibleItems.map((item) => {
-                const courtsLabel =
-                  item.kind === 'company'
-                    ? ` · ${item.courtsCount} ${item.courtsCount === 1 ? 'quadra' : 'quadras'}`
-                    : '';
-                const trialLabel =
-                  item.kind === 'company' && item.trialEndsAt
-                    ? item.isTrial
-                      ? `Trial até ${formatDate(item.trialEndsAt)} · `
-                      : `Trial encerrou em ${formatDate(item.trialEndsAt)} · `
-                    : '';
-
-                return (
-                  <li key={`${item.kind}-${item.publicId}`}>
-                    <ListRow
-                      to={`/clientes/${item.publicId}`}
-                      title={item.name}
-                      badge={<SituationBadge situation={clientSituation(item)} />}
-                      subtitle={`${item.owner?.name || 'Sem dono'}${courtsLabel}`}
-                      meta={`${trialLabel}Último acesso ${formatDateTime(item.owner?.lastLoginAt)}`}
-                    />
-                  </li>
-                );
-              })}
+            <ul className={listClassName} aria-busy={loading}>
+              {visibleItems.map((item) => (
+                <li key={`${item.kind}-${item.publicId}`}>
+                  <ListRow
+                    to={`/clientes/${item.publicId}`}
+                    title={item.name}
+                    badge={
+                      <SituationBadge situation={clientSituation(item)} />
+                    }
+                    meta={`Último acesso ${formatDateTime(item.owner?.lastLoginAt)}`}
+                  />
+                </li>
+              ))}
             </ul>
           ) : null}
         </div>

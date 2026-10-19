@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
+import { surfaceShadowClass } from '../Card';
 
 const ITEM_HEIGHT = 44;
+const PAD_ROWS = 2;
 const VISIBLE_ROWS = 5;
 const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ROWS;
 
@@ -41,21 +43,29 @@ function WheelColumn<T extends string | number>({
   formatLabel?: (value: T) => string;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const isSyncingRef = useRef(false);
+  const syncingRef = useRef(false);
   const settleTimerRef = useRef<number | null>(null);
+  const fromScrollRef = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (fromScrollRef.current) {
+      fromScrollRef.current = false;
+      return;
+    }
     const scroller = scrollerRef.current;
     if (!scroller) return;
     const index = Math.max(0, options.indexOf(value));
-    isSyncingRef.current = true;
-    scroller.scrollTop = index * ITEM_HEIGHT;
-    window.requestAnimationFrame(() => {
-      isSyncingRef.current = false;
-    });
+    const target = index * ITEM_HEIGHT;
+    if (Math.abs(scroller.scrollTop - target) <= 1) return;
+    syncingRef.current = true;
+    scroller.scrollTop = target;
+    const release = window.setTimeout(() => {
+      syncingRef.current = false;
+    }, 48);
+    return () => window.clearTimeout(release);
   }, [options, value]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     return () => {
       if (settleTimerRef.current != null) {
         window.clearTimeout(settleTimerRef.current);
@@ -63,31 +73,34 @@ function WheelColumn<T extends string | number>({
     };
   }, []);
 
-  const snapToNearest = () => {
+  const commitScroll = () => {
     const scroller = scrollerRef.current;
-    if (!scroller || isSyncingRef.current) return;
-
+    if (!scroller || syncingRef.current) return;
     const index = Math.min(
       options.length - 1,
       Math.max(0, Math.round(scroller.scrollTop / ITEM_HEIGHT)),
     );
     const next = options[index];
-    const targetTop = index * ITEM_HEIGHT;
-
-    if (Math.abs(scroller.scrollTop - targetTop) > 1) {
-      scroller.scrollTo({ top: targetTop, behavior: 'smooth' });
+    const target = index * ITEM_HEIGHT;
+    if (Math.abs(scroller.scrollTop - target) > 1) {
+      syncingRef.current = true;
+      scroller.scrollTo({ top: target, behavior: 'smooth' });
+      window.setTimeout(() => {
+        syncingRef.current = false;
+      }, 320);
     }
-
     if (next !== undefined && next !== value) {
+      fromScrollRef.current = true;
       onChange(next);
     }
   };
 
-  const handleScroll = () => {
+  const scheduleCommit = () => {
+    if (syncingRef.current) return;
     if (settleTimerRef.current != null) {
       window.clearTimeout(settleTimerRef.current);
     }
-    settleTimerRef.current = window.setTimeout(snapToNearest, 80);
+    settleTimerRef.current = window.setTimeout(commitScroll, 140);
   };
 
   return (
@@ -98,13 +111,11 @@ function WheelColumn<T extends string | number>({
     >
       <div
         ref={scrollerRef}
-        onScroll={handleScroll}
-        className="h-[220px] snap-y snap-mandatory overflow-y-auto overscroll-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{
-          paddingTop: ITEM_HEIGHT * 2,
-          paddingBottom: ITEM_HEIGHT * 2,
-        }}
+        onScroll={scheduleCommit}
+        onScrollEnd={commitScroll}
+        className="h-full snap-y snap-mandatory overflow-y-auto overscroll-contain touch-pan-y [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
+        <div aria-hidden style={{ height: ITEM_HEIGHT * PAD_ROWS }} />
         {options.map((option) => {
           const selected = option === value;
           return (
@@ -113,15 +124,8 @@ function WheelColumn<T extends string | number>({
               type="button"
               role="option"
               aria-selected={selected}
-              onClick={() => {
-                onChange(option);
-                const index = options.indexOf(option);
-                scrollerRef.current?.scrollTo({
-                  top: index * ITEM_HEIGHT,
-                  behavior: 'smooth',
-                });
-              }}
-              className={`flex w-full snap-center items-center justify-center text-sm transition-colors ${
+              onClick={() => onChange(option)}
+              className={`flex w-full snap-center items-center justify-center whitespace-nowrap text-base leading-none ${
                 selected
                   ? 'font-semibold text-fg'
                   : 'font-medium text-fg-muted'
@@ -132,6 +136,7 @@ function WheelColumn<T extends string | number>({
             </button>
           );
         })}
+        <div aria-hidden style={{ height: ITEM_HEIGHT * PAD_ROWS }} />
       </div>
     </div>
   );
@@ -144,31 +149,29 @@ export default function MonthYearWheelPicker({
   minYear = 2020,
   maxYear = 2035,
 }: MonthYearWheelPickerProps) {
-  const years: number[] = [];
-  for (let y = minYear; y <= maxYear; y += 1) years.push(y);
-  const months = MONTH_LABELS.map((_, index) => index + 1);
+  const years = useMemo(() => {
+    const list: number[] = [];
+    for (let y = minYear; y <= maxYear; y += 1) list.push(y);
+    return list;
+  }, [minYear, maxYear]);
+  const months = useMemo(
+    () => MONTH_LABELS.map((_, index) => index + 1),
+    [],
+  );
 
   return (
     <div className="mb-3">
       <p className="mb-1.5 text-sm font-medium text-fg">Competência</p>
       <div
-        className="relative overflow-hidden rounded-md border border-border bg-surface"
+        className={`relative overflow-hidden rounded-md bg-surface ${surfaceShadowClass}`}
         style={{ height: PICKER_HEIGHT }}
       >
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-2 top-1/2 z-10 h-11 -translate-y-1/2 rounded-md bg-canvas ring-1 ring-inset ring-border"
+          className="pointer-events-none absolute inset-x-2 top-1/2 z-0 -translate-y-1/2 rounded-md bg-canvas"
+          style={{ height: ITEM_HEIGHT }}
         />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 z-20 h-16 bg-gradient-to-b from-surface to-transparent"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-16 bg-gradient-to-t from-surface to-transparent"
-        />
-
-        <div className="relative z-0 flex h-full">
+        <div className="relative z-10 flex h-full">
           <WheelColumn
             ariaLabel="Mês"
             options={months}
@@ -183,6 +186,14 @@ export default function MonthYearWheelPicker({
             onChange={(nextYear) => onChange({ month, year: nextYear })}
           />
         </div>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 z-20 h-16 bg-gradient-to-b from-surface to-transparent"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-16 bg-gradient-to-t from-surface to-transparent"
+        />
       </div>
     </div>
   );

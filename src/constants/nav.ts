@@ -4,7 +4,6 @@ import {
   MdOutlinePayments,
   MdOutlinePeopleAlt,
   MdOutlinePercent,
-  MdOutlinePerson,
   MdOutlineReceiptLong,
   MdOutlineTravelExplore,
 } from 'react-icons/md';
@@ -55,13 +54,6 @@ export const ADMIN_NAV = [
     Icon: MdOutlineReceiptLong,
     match: (path: string) => path === '/custos' || path.startsWith('/custos/'),
   },
-  {
-    to: '/perfil',
-    label: 'Perfil',
-    description: 'Seus dados',
-    Icon: MdOutlinePerson,
-    match: (path: string) => path === '/perfil',
-  },
 ] as const;
 
 export const SELLER_NAV = [
@@ -79,12 +71,5 @@ export const SELLER_NAV = [
     description: 'Acompanhamento',
     Icon: MdOutlinePercent,
     match: (path: string) => path === '/comissoes',
-  },
-  {
-    to: '/perfil',
-    label: 'Perfil',
-    description: 'Seus dados',
-    Icon: MdOutlinePerson,
-    match: (path: string) => path === '/perfil',
   },
 ] as const;

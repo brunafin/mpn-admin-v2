@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import axios from 'axios';
-import { MdAdd } from 'react-icons/md';
+import { MdAdd, MdOutlineChevronRight } from 'react-icons/md';
 import {
   createPlan,
   deletePlan,
@@ -9,12 +9,12 @@ import {
   type Plan,
 } from '../api/plans';
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
-import { Badge } from '../components/Badge';
+import Alert from '../components/Alert';
 import Button from '../components/Button';
+import { cardClassName } from '../components/Card';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
-import ListRow from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import { PlansListSkeleton } from '../components/Skeleton';
 import { formatCurrencyBRL } from '../utils/formatCurrency';
@@ -69,7 +69,9 @@ export default function PlansPage() {
         />
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
-          {loading && plans.length === 0 ? <PlansListSkeleton /> : null}
+          {loading && plans.length === 0 ? (
+            <PlansListSkeleton isolated />
+          ) : null}
 
           {error ? (
             <p className="mb-3 text-sm font-medium text-danger" role="alert">
@@ -95,39 +97,31 @@ export default function PlansPage() {
 
           {plans.length > 0 ? (
             <ul
-              className={`divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface transition-opacity ${
+              className={`space-y-3 transition-opacity ${
                 loading ? 'opacity-60' : ''
               }`}
               aria-busy={loading}
             >
               {plans.map((plan) => (
                 <li key={plan.id}>
-                  <ListRow
+                  <button
+                    type="button"
                     onClick={() => setEditing(plan)}
-                    aria-label={`Editar plano ${plan.name}`}
-                    title={plan.name}
-                    badge={
-                      plan.isTrialPlan ? (
-                        <Badge>Plano trial</Badge>
-                      ) : undefined
-                    }
-                    subtitle={plan.description || undefined}
+                    aria-label={`Editar plano ${plan.name}, ${formatCurrencyBRL(Number(plan.basePrice))}`}
+                    className={`mpn-tap flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-arena-hover! ${cardClassName}`}
                   >
-                    <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3">
-                      <div className="min-w-0">
-                        <p className="text-xs text-fg-muted">Mensalidade</p>
-                        <p className="mt-0.5 truncate text-sm font-medium tabular-nums text-fg">
-                          {formatCurrencyBRL(Number(plan.basePrice))}
-                        </p>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs text-fg-muted">2ª quadra+</p>
-                        <p className="mt-0.5 truncate text-sm font-medium tabular-nums text-fg">
-                          +{formatCurrencyBRL(Number(plan.pricePerCourt))}
-                        </p>
-                      </div>
-                    </div>
-                  </ListRow>
+                    <p className="min-w-0 flex-1 truncate text-base font-semibold text-fg">
+                      {plan.name}
+                    </p>
+                    <p className="shrink-0 text-base font-medium tabular-nums text-fg">
+                      {formatCurrencyBRL(Number(plan.basePrice))}
+                    </p>
+                    <MdOutlineChevronRight
+                      size={18}
+                      className="shrink-0 text-fg-muted"
+                      aria-hidden
+                    />
+                  </button>
                 </li>
               ))}
             </ul>
@@ -194,6 +188,7 @@ function PlanFormSheet({
   const [perCourtInput, setPerCourtInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [formError, setFormError] = useState('');
 
   useEffect(() => {
@@ -209,6 +204,7 @@ function PlanFormSheet({
     setFormError('');
     setSubmitting(false);
     setDeleting(false);
+    setConfirmDelete(false);
   }, [isOpen, plan]);
 
   const handleSubmit = async (event: FormEvent) => {
@@ -254,11 +250,6 @@ function PlanFormSheet({
 
   const handleDelete = async () => {
     if (!onDelete) return;
-    const confirmed = window.confirm(
-      'Excluir este plano? Esta ação não pode ser desfeita.',
-    );
-    if (!confirmed) return;
-
     setDeleting(true);
     setFormError('');
     try {
@@ -274,10 +265,11 @@ function PlanFormSheet({
   };
 
   return (
+    <>
     <FormSheet isOpen={isOpen} title={title} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-1">
         {plan?.isTrialPlan ? (
-          <p className="mb-3 rounded-md border border-border bg-canvas px-3 py-2 text-sm leading-5 text-fg-muted">
+          <p className="mb-3 text-sm leading-5 text-fg-muted">
             Plano trial — usado automaticamente nos 2 meses de teste após o
             onboarding.
           </p>
@@ -329,13 +321,28 @@ function PlanFormSheet({
             fullWidth
             className="mt-2"
             disabled={submitting || deleting}
-            onClick={handleDelete}
+            onClick={() => setConfirmDelete(true)}
           >
             {deleting ? 'Excluindo…' : 'Excluir plano'}
           </Button>
         ) : null}
       </form>
     </FormSheet>
+    <Alert
+      open={confirmDelete}
+      title="Excluir este plano?"
+      confirmLabel="Excluir"
+      confirmVariant="danger"
+      dismissLabel="Cancelar"
+      onDismiss={() => setConfirmDelete(false)}
+      onConfirm={() => {
+        setConfirmDelete(false);
+        void handleDelete();
+      }}
+    >
+      Esta ação não pode ser desfeita.
+    </Alert>
+    </>
   );
 }
 

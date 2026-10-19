@@ -1,37 +1,77 @@
 @import "tailwindcss";
 
 @theme {
-  --color-canvas: #fafafa;
+  /* Cinza bem claro no chão. O escuro é o texto.
+     No tema escuro o chão é o azul-acinzentado da arena, não este hex.
+     Borda e texto suave saem do texto, sem um terceiro cinza. */
+  --color-canvas: #f7f8fa;
+  --color-canvas-soft: var(--color-canvas);
   --color-surface: #ffffff;
-  --color-border: #e5e5e5;
-  --color-fg: #171717;
-  --color-fg-muted: #737373;
-  --color-accent: #171717;
-  --color-success: #3f6b4a;
-  --color-success-soft: #eef5f0;
-  --color-warning: #9a6700;
-  --color-warning-soft: #f8f1e0;
-  --color-danger: #b42318;
-  --color-danger-soft: #f8e9e8;
+  --color-fg: #2c2c2c;
+  --color-fg-muted: color-mix(in srgb, var(--color-fg) 70%, transparent);
+  --color-border: color-mix(in srgb, var(--color-fg) 28%, transparent);
 
+  /* Azul: reservado. Azul-esverdeado da logo: marca, com texto escuro. */
+  --color-reserved: #1e4d96;
+  --color-reserved-soft: #e6eef8;
+  --color-reserved-glow: #d4e4fd;
+  --color-reserved-bar: #3b82f6;
+  --color-accent: #8ec4d2;
+  --color-accent-active: #73a8bc;
+  --color-accent-soft: #e8f4f7;
+  --color-on-accent: #2c2c2c;
+  /* Badge Ativo e botão de salvar: teal saturado, texto branco. O hover fecha um passo. */
+  --color-accent-badge: #226e81;
+  --color-accent-badge-active: #1a5c6e;
+  --color-on-accent-badge: #ffffff;
+  /* Cinza azulado da arena. Claro no tema claro; um passo acima do cartão no escuro. */
+  --color-arena-soft: #e8eef6;
+  /* Hover do mesmo cinza azulado, mais claro para não pesar. */
+  --color-arena-hover: #fafcfe;
+  /* Foco do campo: contorno escuro. O teal claro some no branco. */
+  --color-focus: #2c2c2c;
+
+  /* Verde: livre. Roxo: fixo. */
+  --color-available: #106b48;
+  --color-available-soft: #e7f5ef;
+  --color-available-glow: #c8e8de;
+  --color-available-bar: #059669;
+  --color-fixed: #5b3d96;
+  --color-fixed-soft: #e7e3f3;
+  --color-fixed-glow: #e5dbfd;
+  --color-fixed-bar: #8b5cf6;
+
+  /* Suporte. Sucesso usa o mesmo verde de livre. */
+  --color-success: var(--color-available);
+  --color-success-soft: var(--color-available-soft);
+  --color-warning: #b13609;
+  --color-warning-soft: #fde8d8;
+  --color-danger: #b42318;
+  --color-danger-ink: #b42318;
+  --color-danger-soft: #f8e9e8;
+  --color-danger-glow: #fbd6d6;
+  --color-danger-bar: #ef4444;
+
+  /* Nomes antigos da agenda, apontando para a paleta acima. */
+  --color-master: var(--color-canvas);
+  --color-master-light: var(--color-surface);
+  --color-text-light: var(--color-fg);
+  --color-accent-blue: var(--color-reserved);
+  --color-accent-blue-soft: var(--color-reserved);
+  --color-accent-green: var(--color-available);
+  --color-accent-purple: var(--color-fixed);
+  --color-accent-purple-soft: var(--color-fixed);
+
+  /* 4 / 6 / 8 / 12 / 16px, como o Cal.com. */
+  --radius-xs: 0.25rem;
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
 
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
 
   --breakpoint-xs: 300px;
-
-  /* Escala da marca — legado, sem uso neste portal */
-  --color-primary-100: #ffcaa4;
-  --color-primary-200: #ffbb8b;
-  --color-primary-300: #fda05f;
-  --color-primary-400: #ff8733;
-  --color-primary-500: #f36602;
-  --color-primary-600: #cf5600;
-  --color-primary-700: #ba4e02;
-  --color-primary-800: #a54500;
-  --color-primary-900: #843700;
 }
 
 :root {
@@ -43,9 +83,15 @@
   background-color: var(--color-canvas);
 }
 
+html,
+body,
+#root {
+  height: 100dvh;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
-  min-height: 100dvh;
   background-color: var(--color-canvas);
   color: var(--color-fg);
 }
@@ -83,6 +129,54 @@ body {
   color: var(--color-fg-muted);
   font-weight: 400;
   opacity: 1;
+}
+
+/* Contorno escuro no claro. O teal da marca não entra no campo. */
+.mpn-field:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 4px 12px rgb(0 0 0 / 0.05);
+}
+
+.mpn-field[aria-invalid="true"] {
+  box-shadow:
+    0 1px 2px rgb(180 35 24 / 0.16),
+    0 4px 12px rgb(180 35 24 / 0.1);
+}
+
+/* Contorno escuro de 2px e sombra curta da marca. O clique do mouse não desenha anel. */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent),
+    0 0 10px 1px color-mix(in srgb, var(--color-accent) 28%, transparent);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* O input escondido não leva o anel; o rótulo visível leva. */
+.sr-only:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+label:has(.sr-only:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent),
+    0 0 10px 1px color-mix(in srgb, var(--color-accent) 28%, transparent);
+}
+
+/* Lista recorta o que passa da borda, então o anel fica por dentro. */
+.overflow-hidden :focus-visible,
+.overflow-hidden:focus-visible {
+  outline-offset: -2px;
 }
 
 button {

@@ -41,16 +41,16 @@ function Header() {
   }, [menuOpen]);
 
   return (
-    <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-4 lg:hidden">
+    <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center justify-between gap-3 bg-surface px-4 shadow-[0_4px_16px_rgb(0_0_0/0.04)] lg:hidden">
       <Link
         to="/inicio"
         aria-label="MPN Admin — início"
-        className="flex size-8 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+        className="flex size-11 shrink-0 items-center justify-center"
       >
         <img
           src={ADMIN_LOGO_URL}
           alt=""
-          className="size-full object-contain"
+          className="size-8 object-contain"
         />
       </Link>
 
@@ -60,7 +60,7 @@ function Header() {
         aria-expanded={menuOpen}
         aria-haspopup="dialog"
         onClick={() => setMenuOpen(true)}
-        className="mpn-tap flex size-9 shrink-0 items-center justify-center rounded-md text-fg transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+        className="mpn-tap flex size-11 shrink-0 items-center justify-center rounded-md text-fg transition hover:bg-arena-hover"
       >
         <BsList size={20} aria-hidden />
       </button>
@@ -81,9 +81,9 @@ function Header() {
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="relative z-10 flex h-full w-[min(100%,18rem)] flex-col border-l border-border bg-surface text-fg"
+            className="relative z-10 flex h-full w-[min(100%,18rem)] flex-col bg-surface text-fg shadow-[-8px_0_24px_rgb(0_0_0/0.08)]"
           >
-            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+            <div className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="flex size-8 shrink-0 items-center justify-center">
                 <img
                   src={ADMIN_LOGO_URL}
@@ -99,7 +99,7 @@ function Header() {
                 type="button"
                 onClick={() => setMenuOpen(false)}
                 aria-label="Fechar"
-                className="flex size-9 shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-canvas hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+                className="mpn-tap flex size-11 shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-arena-hover hover:text-fg"
               >
                 <BsX size={20} aria-hidden />
               </button>
@@ -117,10 +117,10 @@ function Header() {
                       <Link
                         to={to}
                         aria-current={isActive ? 'page' : undefined}
-                        className={`flex min-h-11 items-center gap-3 rounded-md px-2.5 py-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg ${
+                        className={`flex min-h-11 items-center gap-3 rounded-md px-2.5 py-2 transition ${
                           isActive
-                            ? 'bg-canvas text-fg'
-                            : 'text-fg-muted hover:bg-canvas hover:text-fg'
+                            ? 'bg-accent-soft text-fg'
+                            : 'text-fg-muted hover:bg-arena-hover hover:text-fg'
                         }`}
                       >
                         <Icon size={18} className="shrink-0" aria-hidden />
@@ -139,10 +139,10 @@ function Header() {
               </ul>
             </nav>
 
-            <div className="border-t border-border p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div className="p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <button
                 type="button"
-                className="flex h-10 w-full items-center justify-center gap-2 rounded-md px-3 text-sm text-fg-muted transition hover:bg-canvas hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-md px-3 text-sm text-fg-muted transition hover:bg-arena-hover hover:text-fg"
                 onClick={() => {
                   void logoutAndRedirect();
                 }}

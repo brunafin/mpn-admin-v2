@@ -10,6 +10,10 @@ import { isRepresentativeToken } from '../ProtectedRoute';
 export const PAGE_SHELL =
   'mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-hidden bg-canvas text-fg';
 
+/** Barra de voltar. Fica no chão, sem faixa nem linha. */
+export const BACK_BAR =
+  'flex shrink-0 items-center gap-1 px-2 py-1.5 lg:px-6';
+
 type AppLayoutProps = {
   children: ReactNode;
 };
@@ -19,14 +23,14 @@ function AppLayout({ children }: AppLayoutProps) {
   const nav = isRepresentativeToken() ? SELLER_NAV : ADMIN_NAV;
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-canvas">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-canvas">
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-surface lg:flex">
+        <aside className="hidden w-56 shrink-0 flex-col bg-surface shadow-[4px_0_16px_rgb(0_0_0/0.04)] lg:flex">
           <div className="flex items-center px-4 py-4">
             <Link
               to="/inicio"
               aria-label="MPN Admin — início"
-              className="flex size-10 shrink-0 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+              className="flex size-10 shrink-0 items-center justify-center"
             >
               <img
                 src={ADMIN_LOGO_URL}
@@ -45,10 +49,10 @@ function AppLayout({ children }: AppLayoutProps) {
                     <Link
                       to={to}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg ${
+                      className={`flex h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition ${
                         isActive
-                          ? 'bg-canvas font-medium text-fg'
-                          : 'font-normal text-fg-muted hover:bg-canvas hover:text-fg'
+                          ? 'bg-accent-soft font-medium text-fg'
+                          : 'font-normal text-fg-muted hover:bg-arena-hover hover:text-fg'
                       }`}
                     >
                       <Icon size={18} className="shrink-0" aria-hidden />
@@ -60,10 +64,10 @@ function AppLayout({ children }: AppLayoutProps) {
             </ul>
           </nav>
 
-          <div className="border-t border-border p-2">
+          <div className="p-2">
             <button
               type="button"
-              className="flex h-9 w-full items-center justify-center gap-2 rounded-md px-2.5 text-sm text-fg-muted transition hover:bg-canvas hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-md px-2.5 text-sm text-fg-muted transition hover:bg-arena-hover hover:text-fg"
               onClick={() => {
                 void logoutAndRedirect();
               }}

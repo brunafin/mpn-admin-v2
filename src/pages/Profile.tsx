@@ -3,7 +3,6 @@ import axios from 'axios';
 import { getProfile, updateProfile, type PortalProfile } from '../api/profile';
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
 import Button from '../components/Button';
-import Card from '../components/Card';
 import Input from '../components/Input';
 import { PageHeader } from '../components/PageTitle';
 import { ClientDetailSkeleton } from '../components/Skeleton';
@@ -150,8 +149,7 @@ export default function ProfilePage() {
           ) : null}
 
           {profile ? (
-            <Card className="max-w-xl">
-              <form onSubmit={handleSubmit} className="space-y-1">
+            <form onSubmit={handleSubmit} className="max-w-xl space-y-1">
                 <Input
                   name="name"
                   title="Nome"
@@ -244,7 +242,7 @@ export default function ProfilePage() {
                 </div>
                 <Input
                   name="password"
-                  title="Nova senha (opcional)"
+                  title="Nova senha"
                   type="password"
                   autoComplete="new-password"
                   value={password}
@@ -265,7 +263,6 @@ export default function ProfilePage() {
                   {submitting ? 'Salvando…' : 'Salvar'}
                 </Button>
               </form>
-            </Card>
           ) : null}
         </div>
       </section>

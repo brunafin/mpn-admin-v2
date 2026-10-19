@@ -16,12 +16,15 @@ export default function FormSheet({
 }: FormSheetProps) {
   const titleId = useId();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!isOpen) return;
 
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
@@ -33,6 +36,32 @@ export default function FormSheet({
       if (event.key === 'Escape') {
         event.preventDefault();
         onCloseRef.current();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = [
+        ...dialog.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ].filter((element) => !element.hasAttribute('disabled') && element.tabIndex >= 0);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      const outside = !(active instanceof Node) || !dialog.contains(active);
+      if (event.shiftKey && (active === first || outside)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (active === last || outside)) {
+        event.preventDefault();
+        first.focus();
       }
     };
 
@@ -41,6 +70,7 @@ export default function FormSheet({
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', onKeyDown);
       window.clearTimeout(focusTimer);
+      previouslyFocused?.focus();
     };
   }, [isOpen]);
 
@@ -59,14 +89,15 @@ export default function FormSheet({
       />
 
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 flex max-h-[min(92dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-t-lg border border-border bg-surface text-fg sm:rounded-lg"
+        className="relative z-10 flex max-h-[min(92dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-t-lg bg-surface text-fg shadow-[0_8px_32px_rgb(0_0_0/0.12)] sm:rounded-lg"
       >
         <div className="mx-auto mt-2 h-1 w-8 shrink-0 rounded-full bg-border sm:hidden" />
 
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3">
           <h2 id={titleId} className="text-sm font-semibold text-fg">
             {title}
           </h2>
@@ -75,7 +106,7 @@ export default function FormSheet({
             type="button"
             onClick={onClose}
             aria-label="Fechar"
-            className="mpn-tap flex size-9 shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-canvas hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+            className="mpn-tap flex size-11 shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-arena-hover hover:text-fg"
           >
             <BsX size={20} aria-hidden />
           </button>

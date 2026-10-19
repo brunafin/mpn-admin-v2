@@ -1,0 +1,102 @@
+/* Tema escuro: o fundo da arena (#081425) e o cartão (#122033). */
+
+.mpn-standard {
+  background: var(--color-canvas);
+  color: var(--color-fg);
+  color-scheme: light;
+}
+
+.mpn-standard[data-theme="dark"] {
+  color-scheme: dark;
+  --color-canvas: #081425;
+  --color-surface: #122033;
+  --color-arena-soft: #1c3148;
+  --color-arena-hover: #162536;
+  --color-fg: #d7e3ff;
+  /* Mesmo peso da borda clara: 28% do texto claro pesa mais no fundo escuro. */
+  --color-border: color-mix(in srgb, var(--color-fg) 18%, transparent);
+  /* Contorno claro. No tema claro ele continua #2c2c2c. */
+  --color-focus: #f3f4f6;
+  --color-accent: #73a8bc;
+  --color-accent-active: #5d9dad;
+  --color-accent-soft: #1a3d48;
+  --color-accent-badge: #3db4cc;
+  --color-accent-badge-active: #2aa3bf;
+  --color-on-accent-badge: #122033;
+  --color-reserved-soft: #1c2a44;
+  --color-reserved-glow: #152843;
+  --color-available-soft: #163028;
+  --color-available-glow: #17363f;
+  --color-fixed-soft: #2a2140;
+  --color-fixed-glow: #202645;
+  --color-warning: #fb923c;
+  --color-warning-soft: #3a220f;
+  --color-reserved: #6b9ad4;
+  --color-available: #36b083;
+  --color-fixed: #a78bdb;
+  --color-danger-ink: #f87171;
+  --color-danger-soft: #3a1d1b;
+  --color-danger-glow: #2e1e36;
+  --color-reserved-bar: #2f6bcd;
+  --color-available-bar: #36b083;
+  --color-fixed-bar: #835cb9;
+  --color-danger-bar: #f87171;
+  /* Apelidos. No :root eles já viram a cor clara e não seguem o override. */
+  --color-canvas-soft: var(--color-canvas);
+  --color-fg-muted: color-mix(in srgb, var(--color-fg) 70%, transparent);
+  --color-master: var(--color-canvas);
+  --color-master-light: var(--color-surface);
+  --color-text-light: var(--color-fg);
+  --color-accent-blue: #2554a0;
+  --color-accent-blue-soft: #6b9ad4;
+  --color-accent-green: #36b083;
+  --color-accent-purple: #7048a8;
+  --color-accent-purple-soft: #a78bdb;
+  --color-success: var(--color-available);
+  --color-success-soft: var(--color-available-soft);
+  background: var(--color-canvas);
+  color: var(--color-fg);
+}
+
+.mpn-standard section {
+  scroll-margin: 0;
+}
+
+.mpn-standard {
+  min-width: 0;
+}
+
+/* A agenda usa a mesma paleta. A fonte continua Lato. */
+.ds-manager {
+  color: var(--color-fg);
+  font-family: Lato, sans-serif;
+}
+
+/* A agenda no escuro usa o chão do manager, não o cartão. */
+.mpn-standard[data-theme="dark"] .ds-manager {
+  --color-border: color-mix(in srgb, var(--color-fg) 28%, transparent);
+  --color-focus: #2c2c2c;
+  background-color: var(--color-canvas);
+  box-shadow: none;
+}
+
+/* Confirmações da agenda. O fixo usa o roxo do botão, não a faixa clara. */
+.ds-sheet-calm {
+  background-color: var(--color-surface);
+  color: var(--color-danger-ink);
+}
+
+.ds-sheet-fix {
+  background-color: #7048a8;
+  color: #f7f8fa;
+}
+
+.ds-sheet-success {
+  background-color: var(--color-available-bar);
+  color: #122033;
+}
+
+.ds-sheet-danger {
+  background-color: var(--color-danger);
+  color: #ffffff;
+}

@@ -13,12 +13,15 @@ import {
   type OutreachStatus,
   type ProspectCity,
 } from '../api/prospects';
-import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
+import AppLayout, { BACK_BAR, PAGE_SHELL } from '../components/AppLayout';
 import { Badge, OutreachBadge } from '../components/Badge';
 import Button from '../components/Button';
+import Checkbox from '../components/Checkbox';
+import { choiceRowClass } from '../components/Checkbox/row';
+import CheckMark from '../components/Checkbox/Mark';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
-import Input from '../components/Input';
-import ListRow from '../components/ListRow';
+import Input, { fieldOutlineClass } from '../components/Input';
+import ListRow, { listClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import Select from '../components/Select';
 import { ClientsListSkeleton } from '../components/Skeleton';
@@ -39,27 +42,13 @@ const STATUS_FILTERS: Array<{ id: '' | OutreachStatus; name: string }> = [
   { id: 'won', name: OUTREACH_LABEL.won },
 ];
 
-const emptyCounts = {
-  new: 0,
-  contacted: 0,
-  waiting: 0,
-  interested: 0,
-  won: 0,
-  lost: 0,
-  competitor: 0,
-  skip: 0,
-};
-
-const filterSelectClass =
-  'h-10 w-full appearance-none rounded-md border border-border bg-surface px-3 pr-8 text-sm text-fg focus:outline-none focus-visible:ring-1 focus-visible:ring-fg';
+const filterSelectClass = `${fieldOutlineClass} w-full appearance-none pr-8`;
 
 export default function ProspectsPage() {
   const [mode, setMode] = useState<'portfolio' | 'search'>('portfolio');
   const [items, setItems] = useState<GoogleCourtProspect[]>([]);
   const [visibleQ, setVisibleQ] = useState('');
   const [cities, setCities] = useState<ProspectCity[]>([]);
-  const [counts, setCounts] = useState(emptyCounts);
-  const [total, setTotal] = useState(0);
   const [cityFilter, setCityFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'' | OutreachStatus>('');
   const [loading, setLoading] = useState(true);
@@ -82,8 +71,6 @@ export default function ProspectsPage() {
     ])
       .then(([list, cityRows]) => {
         setItems(list.items);
-        setCounts(list.counts);
-        setTotal(list.total);
         setCities(cityRows);
         setError('');
       })
@@ -114,16 +101,6 @@ export default function ProspectsPage() {
       return haystack.includes(term);
     });
   }, [items, visibleQ]);
-
-  const metrics = useMemo(
-    () => [
-      { label: 'No portfólio', value: total },
-      { label: 'Novos', value: counts.new },
-      { label: 'Contatados', value: counts.contacted + counts.waiting },
-      { label: 'Interessados', value: counts.interested },
-    ],
-    [counts, total],
-  );
 
   if (mode === 'search') {
     return (
@@ -171,17 +148,6 @@ export default function ProspectsPage() {
             <ClientsListSkeleton />
           ) : (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
-                {metrics.map((item) => (
-                  <div key={item.label} className="bg-surface px-4 py-3">
-                    <p className="text-xs text-fg-muted">{item.label}</p>
-                    <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-fg">
-                      {item.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <label className="block">
                   <span className="sr-only">Buscar por nome</span>
@@ -191,7 +157,7 @@ export default function ProspectsPage() {
                     onChange={(event) => setVisibleQ(event.target.value)}
                     placeholder="Nome, telefone ou endereço"
                     autoComplete="off"
-                    className="mpn-field h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:ring-1 focus-visible:ring-fg"
+                    className={`${fieldOutlineClass} w-full`}
                   />
                 </label>
                 <label className="block">
@@ -254,7 +220,7 @@ export default function ProspectsPage() {
                   }
                 />
               ) : (
-                <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+                <ul className={listClassName}>
                   {visibleItems.map((item) => (
                     <li key={item.googlePlaceId}>
                       <ListRow
@@ -299,7 +265,7 @@ function SearchCityView({
   onImported: (city: string, uf: string) => void;
 }) {
   const [city, setCity] = useState('');
-  const [uf, setUf] = useState('SP');
+  const [uf, setUf] = useState('RS');
   const [extraQuery, setExtraQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -411,12 +377,12 @@ function SearchCityView({
   return (
     <AppLayout>
       <section className={PAGE_SHELL}>
-        <div className="flex shrink-0 items-center gap-1 border-b border-border bg-surface px-2 py-1.5 lg:px-6">
+        <div className={BACK_BAR}>
           <button
             type="button"
             aria-label="Voltar ao portfólio"
             onClick={onBack}
-            className="mpn-tap flex size-9 items-center justify-center rounded-md text-fg hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+            className="mpn-tap flex size-9 items-center justify-center rounded-md text-fg hover:bg-arena-hover"
           >
             <MdArrowBack size={20} aria-hidden />
           </button>
@@ -449,7 +415,7 @@ function SearchCityView({
             />
             <Input
               name="extraQuery"
-              title="Termo extra (opcional)"
+              title="Termo extra"
               placeholder="beach tennis, paddle…"
               value={extraQuery}
               onChange={(event) => setExtraQuery(event.target.value)}
@@ -469,22 +435,23 @@ function SearchCityView({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-fg-muted">{hint}</p>
                 <div className="flex flex-wrap items-center gap-3">
-                  <label className="flex items-center gap-2 text-sm text-fg">
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-fg"
-                      checked={phoneOnly}
-                      onChange={(event) => setPhoneOnly(event.target.checked)}
-                    />
-                    Só com telefone
-                  </label>
+                  <Checkbox
+                    name="phoneOnly"
+                    label="Só com telefone"
+                    checked={phoneOnly}
+                    onChange={(event) => setPhoneOnly(event.target.checked)}
+                  />
                   {visibleHits.some((hit) => !hit.inPortfolio) ? (
                     <button
                       type="button"
                       onClick={toggleAllNew}
                       className="text-sm font-medium text-fg underline-offset-2 hover:underline"
                     >
-                      Alternar novas
+                      {visibleHits.some(
+                        (hit) => !hit.inPortfolio && !selected[hit.googlePlaceId],
+                      )
+                        ? 'Selecionar todas'
+                        : 'Desmarcar todas'}
                     </button>
                   ) : null}
                 </div>
@@ -505,13 +472,13 @@ function SearchCityView({
                   className="py-10"
                 />
               ) : (
-                <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+                <ul className="flex flex-col gap-2">
                   {visibleHits.map((hit) => (
                     <li key={hit.googlePlaceId}>
-                      <label className="mpn-tap flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-canvas">
+                      <label className={choiceRowClass(false, 'w-full items-start!')}>
                         <input
                           type="checkbox"
-                          className="mt-1 size-4 shrink-0 accent-fg"
+                          className="peer sr-only"
                           checked={Boolean(selected[hit.googlePlaceId])}
                           onChange={(event) =>
                             setSelected((current) => ({
@@ -520,8 +487,9 @@ function SearchCityView({
                             }))
                           }
                         />
+                        <CheckMark checked={Boolean(selected[hit.googlePlaceId])} />
                         <span className="min-w-0 flex-1">
-                          <span className="flex min-w-0 items-center gap-2">
+                          <span className="flex min-w-0 items-center gap-3">
                             <span className="min-w-0 truncate text-sm font-medium text-fg">
                               {hit.name}
                             </span>

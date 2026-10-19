@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { MdOutlineChevronRight } from 'react-icons/md';
+import { surfaceShadowClass } from '../Card';
 
 type ListRowProps = {
   to?: string;
@@ -15,8 +16,11 @@ type ListRowProps = {
   'aria-label'?: string;
 };
 
+/** Lista sobre o cartão. As linhas se separam pelo espaço e pelo hover, sem traço. */
+export const listClassName = `overflow-hidden rounded-lg bg-surface ${surfaceShadowClass}`;
+
 const rowClass =
-  'mpn-tap flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-fg';
+  'mpn-tap flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-arena-hover';
 
 export default function ListRow({
   to,
@@ -35,7 +39,7 @@ export default function ListRow({
   const content = (
     <>
       <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-3">
           <p className="min-w-0 truncate text-sm font-medium text-fg">{title}</p>
           {badge}
         </div>

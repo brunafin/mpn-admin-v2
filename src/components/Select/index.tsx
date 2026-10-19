@@ -1,4 +1,6 @@
+import { useId } from "react";
 import { MdKeyboardArrowDown } from "react-icons/md";
+import { fieldOutlineClass } from "../Input";
 
 interface ISelectOption {
   id: number | string;
@@ -8,6 +10,7 @@ interface ISelectOption {
 interface ISelectProps {
   name: string;
   title?: string;
+  hint?: string;
   value?: number | string;
   options: ISelectOption[];
   onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
@@ -17,11 +20,14 @@ interface ISelectProps {
   className?: string;
   disabled?: boolean;
   placeholder?: string;
+  error?: string;
 }
 
+/** Seletor nativo. Interação: Magoo 1.5.0, Select (Combo). */
 function Select({
   name,
   title,
+  hint,
   value,
   options,
   onChange,
@@ -31,8 +37,13 @@ function Select({
   className,
   disabled = false,
   placeholder = "Selecione...",
+  error,
 }: ISelectProps) {
+  const hintUid = useId();
   const hasValue = value !== undefined && value !== null && value !== "";
+  const hintId = hint ? hintUid : undefined;
+  const errorId = error ? `${name}-error` : undefined;
+  const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className={`mb-3 flex flex-col ${className ?? ""}`}>
@@ -40,7 +51,7 @@ function Select({
         <label htmlFor={name} className="mb-1.5 text-sm font-medium text-fg">
           {title}
           {required && (
-            <span className="font-medium text-fg-muted" aria-hidden="true">
+            <span className="font-medium text-danger-ink" aria-hidden="true">
               {" "}
               *
             </span>
@@ -59,11 +70,11 @@ function Select({
           required={required}
           disabled={disabled}
           aria-required={required || undefined}
-          className={`h-10 w-full appearance-none rounded-md border border-border bg-surface px-3 pr-10 text-sm text-fg
-            focus:outline-none focus-visible:ring-1 focus-visible:ring-fg
-            disabled:cursor-not-allowed disabled:opacity-60
-            ${!hasValue ? "text-fg-muted" : ""}
-          `}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          className={`${fieldOutlineClass} w-full appearance-none pr-10 ${
+            !hasValue ? "text-fg-muted" : ""
+          }`}
         >
           <option value="" disabled={required}>
             {placeholder}
@@ -83,6 +94,16 @@ function Select({
           }`}
         />
       </div>
+      {hint && (
+        <p id={hintId} className="mt-1.5 text-sm text-fg-muted">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={errorId} role="alert" className="mt-1.5 text-sm font-medium text-danger-ink">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

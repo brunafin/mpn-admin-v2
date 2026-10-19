@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { surfaceShadowClass } from "../Card";
 
 export type ButtonVariant =
   | "primary"
@@ -7,7 +8,7 @@ export type ButtonVariant =
   | "dangerOutline"
   | "ghost";
 
-export type ButtonSize = "sm" | "md";
+export type ButtonSize = "sm" | "md" | "lg";
 
 type ButtonClassOptions = {
   variant?: ButtonVariant;
@@ -18,20 +19,17 @@ type ButtonClassOptions = {
 
 const sizeClass: Record<ButtonSize, string> = {
   sm: "h-9 rounded-md px-3 text-sm",
-  md: "h-10 rounded-md px-3.5 text-sm",
+  md: "h-10 rounded-md px-5 text-sm",
+  lg: "h-14 rounded-md px-5 text-sm",
 };
 
 const variantClass: Record<ButtonVariant, string> = {
   primary:
-    "bg-accent text-white hover:bg-fg/90 focus-visible:outline-fg",
-  secondary:
-    "border border-border bg-surface text-fg hover:bg-canvas focus-visible:outline-fg",
-  danger:
-    "bg-danger text-white hover:bg-danger/90 focus-visible:outline-danger",
-  dangerOutline:
-    "border border-danger/30 bg-transparent text-danger hover:bg-danger-soft focus-visible:outline-danger",
-  ghost:
-    "bg-transparent text-fg-muted hover:bg-canvas hover:text-fg focus-visible:outline-fg",
+    "bg-accent-badge text-on-accent-badge hover:bg-accent-badge-active",
+  secondary: `bg-surface text-fg hover:bg-arena-hover ${surfaceShadowClass}`,
+  danger: "bg-danger text-white hover:bg-danger/90",
+  dangerOutline: "bg-danger-soft text-danger-ink hover:brightness-95",
+  ghost: "bg-transparent text-fg-muted hover:bg-arena-hover hover:text-fg",
 };
 
 /**
@@ -45,8 +43,8 @@ export function buttonClassName({
   className = "",
 }: ButtonClassOptions = {}): string {
   return [
-    "inline-flex items-center justify-center gap-1.5 font-medium transition",
-    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+    "inline-flex items-center justify-center gap-1.5 font-semibold transition",
+    "enabled:active:brightness-95",
     "disabled:cursor-not-allowed disabled:opacity-50",
     sizeClass[size],
     variantClass[variant],

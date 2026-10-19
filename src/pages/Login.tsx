@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { surfaceShadowClass } from '../components/Card';
 import Input from '../components/Input';
 import { buttonClassName } from '../components/Button';
 import { login, portalForgotPassword, portalResetPassword } from '../api/auth';
@@ -117,8 +118,8 @@ function LoginPage() {
   const resetReady = Boolean(code.trim() && newPassword) && !loading;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-canvas px-4 py-10 text-fg">
-      <div className="w-full max-w-sm rounded-lg border border-border bg-surface px-6 py-8">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto bg-canvas px-4 py-10 text-fg">
+      <div className={`w-full max-w-sm rounded-lg bg-surface px-6 py-8 ${surfaceShadowClass}`}>
         <div className="mb-6 flex flex-col items-center">
           <img
             src={ADMIN_LOGO_URL}

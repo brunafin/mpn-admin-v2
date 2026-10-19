@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import axios from 'axios';
-import { MdAdd } from 'react-icons/md';
+import { MdAdd, MdOutlineChevronRight } from 'react-icons/md';
 import {
   createCost,
   deleteCost,
@@ -10,22 +10,16 @@ import {
   type CostRecurrence,
 } from '../api/costs';
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
-import { Badge } from '../components/Badge';
+import Alert from '../components/Alert';
 import Button from '../components/Button';
+import { cardClassName } from '../components/Card';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
-import ListRow from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import Select from '../components/Select';
 import { PlansListSkeleton } from '../components/Skeleton';
 import { formatCurrencyBRL } from '../utils/formatCurrency';
-
-const RECURRENCE_LABEL: Record<CostRecurrence, string> = {
-  monthly: 'Mensal',
-  yearly: 'Anual',
-  once: 'Única',
-};
 
 const RECURRENCE_OPTIONS = [
   { id: 'monthly', name: 'Mensal' },
@@ -89,7 +83,9 @@ export default function CostsPage() {
         />
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
-          {loading && costs.length === 0 ? <PlansListSkeleton /> : null}
+          {loading && costs.length === 0 ? (
+            <PlansListSkeleton isolated />
+          ) : null}
 
           {error ? (
             <p className="mb-3 text-sm font-medium text-danger" role="alert">
@@ -122,22 +118,31 @@ export default function CostsPage() {
                 </span>
               </p>
               <ul
-                className={`divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface transition-opacity ${
+                className={`space-y-3 transition-opacity ${
                   loading ? 'opacity-60' : ''
                 }`}
                 aria-busy={loading}
               >
                 {costs.map((cost) => (
                   <li key={cost.id}>
-                    <ListRow
+                    <button
+                      type="button"
                       onClick={() => setEditing(cost)}
-                      aria-label={`Editar custo ${cost.description}`}
-                      title={cost.description}
-                      badge={
-                        <Badge>{RECURRENCE_LABEL[cost.recurrence]}</Badge>
-                      }
-                      subtitle={formatCurrencyBRL(Number(cost.amount))}
-                    />
+                      aria-label={`Editar custo ${cost.description}, ${formatCurrencyBRL(Number(cost.amount))}`}
+                      className={`mpn-tap flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-arena-hover! ${cardClassName}`}
+                    >
+                      <p className="min-w-0 flex-1 truncate text-base font-semibold text-fg">
+                        {cost.description}
+                      </p>
+                      <p className="shrink-0 text-base font-medium tabular-nums text-fg">
+                        {formatCurrencyBRL(Number(cost.amount))}
+                      </p>
+                      <MdOutlineChevronRight
+                        size={18}
+                        className="shrink-0 text-fg-muted"
+                        aria-hidden
+                      />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -203,6 +208,7 @@ function CostFormSheet({
   const [recurrence, setRecurrence] = useState<CostRecurrence>('monthly');
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [formError, setFormError] = useState('');
 
   useEffect(() => {
@@ -215,6 +221,7 @@ function CostFormSheet({
     setFormError('');
     setSubmitting(false);
     setDeleting(false);
+    setConfirmDelete(false);
   }, [isOpen, cost]);
 
   const handleSubmit = async (event: FormEvent) => {
@@ -245,11 +252,6 @@ function CostFormSheet({
 
   const handleDelete = async () => {
     if (!onDelete) return;
-    const confirmed = window.confirm(
-      'Excluir este custo? Esta ação não pode ser desfeita.',
-    );
-    if (!confirmed) return;
-
     setDeleting(true);
     setFormError('');
     try {
@@ -263,6 +265,7 @@ function CostFormSheet({
   };
 
   return (
+    <>
     <FormSheet isOpen={isOpen} title={title} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-1">
         <Input
@@ -307,13 +310,28 @@ function CostFormSheet({
             fullWidth
             className="mt-2"
             disabled={submitting || deleting}
-            onClick={handleDelete}
+            onClick={() => setConfirmDelete(true)}
           >
             {deleting ? 'Excluindo…' : 'Excluir custo'}
           </Button>
         ) : null}
       </form>
     </FormSheet>
+    <Alert
+      open={confirmDelete}
+      title="Excluir este custo?"
+      confirmLabel="Excluir"
+      confirmVariant="danger"
+      dismissLabel="Cancelar"
+      onDismiss={() => setConfirmDelete(false)}
+      onConfirm={() => {
+        setConfirmDelete(false);
+        void handleDelete();
+      }}
+    >
+      Esta ação não pode ser desfeita.
+    </Alert>
+    </>
   );
 }
 

@@ -14,14 +14,15 @@ import {
 } from '../api/clients';
 import { listPlans, type Plan } from '../api/plans';
 import { listRepresentatives, type RepresentativeListItem } from '../api/representatives';
-import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
+import AppLayout, { BACK_BAR, PAGE_SHELL } from '../components/AppLayout';
 import { isRepresentativeToken } from '../components/ProtectedRoute';
 import SellerCompanyPage from './SellerCompany';
 import { SituationBadge } from '../components/Badge';
 import Button from '../components/Button';
-import Card, { CardLabel } from '../components/Card';
+import { CardLabel } from '../components/Card';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
+import Checkbox from '../components/Checkbox';
 import Select from '../components/Select';
 import MonthYearWheelPicker from '../components/MonthYearWheelPicker';
 import { ClientDetailSkeleton } from '../components/Skeleton';
@@ -44,7 +45,7 @@ const WHATSAPP_BASE =
  * 2. Quadras
  * 3. Reservas
  * 4. Plano + pagamentos
- * 5. Zona de risco
+ * 5. Excluir cliente
  */
 export default function ClientDetailPage() {
   if (isRepresentativeToken()) {
@@ -114,15 +115,15 @@ function AdminClientDetailPage() {
         }`}
         aria-busy={loading}
       >
-        <div className="flex shrink-0 items-center gap-1 border-b border-border bg-surface px-2 py-1.5 lg:px-6">
+        <div className={BACK_BAR}>
           <Link
             to="/clientes"
             aria-label="Voltar para clientes"
-            className="mpn-tap flex size-9 shrink-0 items-center justify-center rounded-md text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+            className="mpn-tap flex size-9 shrink-0 items-center justify-center rounded-md text-fg"
           >
             <MdArrowBack size={20} aria-hidden />
           </Link>
-          <div className="flex min-w-0 flex-1 items-center gap-2 pr-2">
+          <div className="flex min-w-0 flex-1 items-center gap-3 pr-2">
             <p className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-fg">
               {client?.name || 'Detalhe'}
             </p>
@@ -148,7 +149,7 @@ function AdminClientDetailPage() {
               (client.owner && !client.owner.emailVerified) ? (
                 <p
                   role="status"
-                  className="rounded-md border border-warning/20 bg-warning-soft px-4 py-3 text-sm leading-5 text-warning"
+                  className="rounded-md bg-warning-soft px-4 py-3 text-sm leading-5 text-warning"
                 >
                   {client.kind === 'onboarding'
                     ? 'Em cadastro — ainda sem estabelecimento no sistema.'
@@ -158,7 +159,7 @@ function AdminClientDetailPage() {
                 </p>
               ) : null}
 
-              <Card aria-labelledby="arena-heading">
+              <section aria-labelledby="arena-heading">
                 <h1
                   id="arena-heading"
                   className="truncate text-lg font-semibold tracking-tight text-fg"
@@ -173,7 +174,7 @@ function AdminClientDetailPage() {
                         target="_blank"
                         rel="noreferrer"
                         aria-label={`Abrir WhatsApp de ${client.owner?.name || 'dono'} — ${formatPhoneMask(client.owner?.phone || '')}`}
-                        className="mpn-tap block min-w-0 truncate rounded-md text-sm font-medium text-fg underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+                        className="mpn-tap block min-w-0 truncate rounded-md text-sm font-medium text-fg underline-offset-2 hover:underline"
                       >
                         {client.owner?.name || 'Sem nome'}
                       </a>
@@ -195,7 +196,7 @@ function AdminClientDetailPage() {
                   </span>
                 </div>
                 {client.kind === 'company' ? (
-                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+                  <div className="mt-3 flex items-center justify-between gap-3">
                     <p className="min-w-0 truncate text-sm text-fg-muted">
                       Representante{' '}
                       <span className="text-fg">
@@ -207,29 +208,22 @@ function AdminClientDetailPage() {
                     </TextAction>
                   </div>
                 ) : null}
-              </Card>
+              </section>
 
               {client.kind === 'company' ? (
                 <>
                   <section aria-labelledby="quadras-heading">
                     <CardLabel id="quadras-heading">Quadras</CardLabel>
-                    <div
-                      className="mt-2 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border"
+                    <p
+                      className="mt-2 text-sm text-fg"
                       aria-label={`${client.courtsCount} quadras no total, ${client.visibleCourtsCount} ativas no site`}
                     >
-                      <div className="bg-surface px-4 py-3">
-                        <p className="text-xs text-fg-muted">Total</p>
-                        <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-fg">
-                          {client.courtsCount}
-                        </p>
-                      </div>
-                      <div className="bg-surface px-4 py-3">
-                        <p className="text-xs text-fg-muted">Ativas</p>
-                        <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-fg">
-                          {client.visibleCourtsCount}
-                        </p>
-                      </div>
-                    </div>
+                      Total {client.courtsCount}
+                      <span className="mx-2 text-fg-muted" aria-hidden>
+                        ·
+                      </span>
+                      Ativas {client.visibleCourtsCount}
+                    </p>
                   </section>
 
                   <section aria-labelledby="reservas-heading">
@@ -241,18 +235,18 @@ function AdminClientDetailPage() {
                       aria-label="Reservas do mês atual"
                     >
                       Passadas {client.usage?.pastReservations ?? 0}
-                      <span className="mx-2 text-border" aria-hidden>
-                        |
+                      <span className="mx-2 text-fg-muted" aria-hidden>
+                        ·
                       </span>
                       Futuras {client.usage?.futureReservations ?? 0}
-                      <span className="mx-2 text-border" aria-hidden>
-                        |
+                      <span className="mx-2 text-fg-muted" aria-hidden>
+                        ·
                       </span>
                       Fixos {client.usage?.fixedSlots ?? 0}
                     </p>
                   </section>
 
-                  <Card aria-labelledby="comercial-heading">
+                  <section aria-labelledby="comercial-heading">
                     <header className="flex items-center justify-between gap-3">
                       <CardLabel id="comercial-heading">Plano</CardLabel>
                       <TextAction onClick={() => setPlanSheetOpen(true)}>
@@ -269,7 +263,7 @@ function AdminClientDetailPage() {
                       {client.plan?.name || 'Sem plano'}
                     </p>
 
-                    <header className="mt-6 flex items-center justify-between gap-3 border-t border-border pt-4">
+                    <header className="mt-6 flex items-center justify-between gap-3">
                       <CardLabel id="pagamentos-heading">Pagamentos</CardLabel>
                       <TextAction onClick={() => setAddMonthOpen(true)}>
                         Adicionar
@@ -289,24 +283,11 @@ function AdminClientDetailPage() {
                       </p>
                     ) : (
                       <>
-                        <ol className="relative mt-4 ms-1.5 border-s border-border ps-5">
+                        <ul className="mt-4 space-y-3">
                           {visiblePayments.map((payment) => {
                             const status = paymentStatus(payment);
                             return (
-                              <li
-                                key={payment.id}
-                                className="relative pb-4 last:pb-0"
-                              >
-                                <span
-                                  className={`absolute -start-[1.35rem] top-1.5 size-2 rounded-full ${
-                                    payment.paid
-                                      ? 'bg-success'
-                                      : payment.status === 'overdue'
-                                        ? 'bg-danger'
-                                        : 'bg-fg-muted'
-                                  }`}
-                                  aria-hidden
-                                />
+                              <li key={payment.id}>
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="min-w-0">
                                     <p className="truncate text-sm font-medium capitalize text-fg">
@@ -336,7 +317,7 @@ function AdminClientDetailPage() {
                               </li>
                             );
                           })}
-                        </ol>
+                        </ul>
                         {hasMorePayments ? (
                           <div className="mt-2">
                             <TextAction
@@ -352,10 +333,10 @@ function AdminClientDetailPage() {
                         ) : null}
                       </>
                     )}
-                  </Card>
+                  </section>
 
                   {client.commissions ? (
-                    <Card>
+                    <section>
                       <CardLabel>Comissão do representante</CardLabel>
                       <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-fg">
                         {formatCurrencyBRL(client.commissions.total)}
@@ -364,22 +345,20 @@ function AdminClientDetailPage() {
                         {client.commissions.firstMonthPercent}% da 1ª ·{' '}
                         {client.commissions.recurringPercent}% das seguintes
                       </p>
-                    </Card>
+                    </section>
                   ) : null}
                 </>
               ) : null}
 
-              <div className="border-t border-border pt-6">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-fg-muted">
-                  Zona de risco
-                </p>
-                <button
+              <div className="pt-2">
+                <Button
                   type="button"
+                  variant="dangerOutline"
+                  fullWidth
                   onClick={() => setDeleteSheetOpen(true)}
-                  className="mpn-tap flex h-10 w-full items-center justify-center rounded-md border border-danger/25 px-4 text-sm font-medium text-danger transition hover:bg-danger-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
                 >
                   Excluir cliente
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}
@@ -456,10 +435,10 @@ function TextAction({
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
-      className={`mpn-tap inline-flex min-h-8 shrink-0 items-center rounded-md px-1 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`mpn-tap inline-flex min-h-8 shrink-0 items-center rounded-md px-1 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
         tone === 'danger'
-          ? 'text-danger hover:bg-danger-soft focus-visible:outline-danger'
-          : 'text-fg hover:bg-canvas focus-visible:outline-fg'
+          ? 'text-danger hover:bg-danger-soft'
+          : 'text-fg hover:bg-arena-hover'
       }`}
     >
       {children}
@@ -777,14 +756,13 @@ function AssignPlanSheet({
           }
         />
         {client.isTrial ? (
-          <label className="mb-3 flex min-h-10 items-center gap-2.5 text-sm text-fg">
-            <input
-              type="checkbox"
-              checked={endTrial}
-              onChange={(event) => setEndTrial(event.target.checked)}
-            />
-            Encerrar trial agora
-          </label>
+          <Checkbox
+            name="endTrial"
+            label="Encerrar trial agora"
+            checked={endTrial}
+            onChange={(event) => setEndTrial(event.target.checked)}
+            className="mb-3"
+          />
         ) : null}
         <p className="mb-3 text-sm leading-5 text-fg-muted">
           Mensalidade prevista:{' '}

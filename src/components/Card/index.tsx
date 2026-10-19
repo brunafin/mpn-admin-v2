@@ -1,7 +1,14 @@
 import type { ElementType, ReactNode } from 'react';
 
-/** Superfície padrão — branco com borda. */
-export const cardClassName = 'rounded-lg border border-border bg-surface';
+/** Sombra curta. Separa a superfície do chão no lugar da borda. */
+export const surfaceShadowClass =
+  'shadow-[0_1px_2px_rgb(0_0_0/0.04),0_4px_12px_rgb(0_0_0/0.05)]';
+
+/** Superfície padrão. O branco e a sombra separam o cartão, sem contorno. */
+export const cardClassName = `rounded-lg bg-surface ${surfaceShadowClass}`;
+
+/** Métrica solta. Cada número é um cartão, separado por espaço. */
+export const metricTileClass = `rounded-lg bg-surface px-4 py-3 ${surfaceShadowClass}`;
 
 export const cardPaddingClassName = 'px-4 py-4';
 

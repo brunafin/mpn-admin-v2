@@ -4,13 +4,15 @@ import type { PartnerStatus } from '../../api/clients';
 import type { OutreachStatus } from '../../api/prospects';
 import { OUTREACH_LABEL } from '../../api/prospects';
 
-export type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger';
+export type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger' | 'accent' | 'ink';
 
-const toneClass: Record<BadgeTone, string> = {
-  neutral: 'border border-border bg-canvas text-fg-muted',
+export const badgeToneClass: Record<BadgeTone, string> = {
+  neutral: 'bg-[#e6e8ec] text-fg',
   success: 'bg-success-soft text-success',
   warning: 'bg-warning-soft text-warning',
-  danger: 'bg-danger-soft text-danger',
+  danger: 'bg-danger-soft text-danger-ink',
+  accent: 'bg-accent-badge text-on-accent-badge',
+  ink: 'bg-[#2c2c2c] text-[#f7f8fa]',
 };
 
 type BadgeProps = {
@@ -22,7 +24,7 @@ type BadgeProps = {
 export function Badge({ children, tone = 'neutral', className = '' }: BadgeProps) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-xs font-medium ${toneClass[tone]} ${className}`.trim()}
+      className={`inline-flex w-fit max-w-full shrink-0 items-center rounded-md px-3 py-1.5 text-xs font-medium leading-normal ${badgeToneClass[tone]} ${className}`.trim()}
     >
       {children}
     </span>
@@ -30,10 +32,10 @@ export function Badge({ children, tone = 'neutral', className = '' }: BadgeProps
 }
 
 const partnerStatus: Record<PartnerStatus, { label: string; tone: BadgeTone }> = {
-  active: { label: 'Ativo', tone: 'success' },
+  active: { label: 'Ativo', tone: 'accent' },
   onboarding: { label: 'Onboarding', tone: 'neutral' },
   inactive: { label: 'Inativo', tone: 'neutral' },
-  expired: { label: 'Expirado', tone: 'warning' },
+  expired: { label: 'Expirado', tone: 'danger' },
 };
 
 export function PartnerStatusBadge({ status }: { status: PartnerStatus }) {
@@ -42,8 +44,8 @@ export function PartnerStatusBadge({ status }: { status: PartnerStatus }) {
 }
 
 const situationTone: Record<ClientSituation, BadgeTone> = {
-  active: 'success',
-  trial: 'warning',
+  active: 'accent',
+  trial: 'ink',
   expired: 'danger',
   inactive: 'neutral',
   onboarding: 'neutral',

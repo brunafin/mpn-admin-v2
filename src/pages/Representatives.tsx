@@ -7,16 +7,13 @@ import {
   type RepresentativeListItem,
 } from '../api/representatives';
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
-import { Badge } from '../components/Badge';
 import Button from '../components/Button';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
-import ListRow from '../components/ListRow';
+import ListRow, { listClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
-import { PlansListSkeleton } from '../components/Skeleton';
-import { formatPhone } from '../utils/format';
-import { formatCurrencyBRL } from '../utils/formatCurrency';
+import { ClientsListSkeleton } from '../components/Skeleton';
 import { formatPhoneMask, onlyPhoneDigits } from '../utils/formatPhone';
 
 export default function RepresentativesPage() {
@@ -62,7 +59,7 @@ export default function RepresentativesPage() {
         />
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
-          {loading && items.length === 0 ? <PlansListSkeleton /> : null}
+          {loading && items.length === 0 ? <ClientsListSkeleton /> : null}
           {error ? (
             <p className="mb-3 text-sm font-medium text-danger" role="alert">
               {error}
@@ -86,21 +83,15 @@ export default function RepresentativesPage() {
           ) : null}
 
           {items.length > 0 ? (
-            <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+            <ul className={listClassName}>
               {items.map((item) => (
                 <li key={item.publicId}>
                   <ListRow
                     to={`/representantes/${item.publicId}`}
                     title={item.name}
-                    badge={
-                      item.status ? undefined : (
-                        <Badge tone="danger">Inativo</Badge>
-                      )
-                    }
-                    subtitle={`${item.username}${item.email ? ` · ${item.email}` : ''}${item.phone ? ` · ${formatPhone(item.phone)}` : ''} · ${item.companiesCount} ${
+                    subtitle={`${item.companiesCount} ${
                       item.companiesCount === 1 ? 'quadra' : 'quadras'
                     }`}
-                    meta={`${item.firstMonthPercent}% 1ª · ${item.recurringPercent}% seguintes · ${formatCurrencyBRL(item.commissionTotal)}`}
                   />
                 </li>
               ))}
@@ -220,7 +211,7 @@ function RepresentativeSheet({
         </p>
         <Input
           name="phone"
-          title="Telefone (opcional)"
+          title="Telefone"
           type="tel"
           inputMode="tel"
           value={phone}

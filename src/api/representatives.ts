@@ -57,6 +57,13 @@ export type RepresentativeCompany = {
   commissions: CommissionSummary;
 };
 
+export type RepresentativePayout = {
+  year: number;
+  month: number;
+  amount: number;
+  paidAt: string;
+};
+
 export type Representative = {
   publicId: string;
   name: string;
@@ -70,9 +77,13 @@ export type Representative = {
   companiesCount: number;
   commissionTotal: number;
   companies: RepresentativeCompany[];
+  payouts: RepresentativePayout[];
 };
 
-export type RepresentativeListItem = Omit<Representative, 'companies'>;
+export type RepresentativeListItem = Omit<
+  Representative,
+  'companies' | 'payouts'
+>;
 
 export type RepresentativeInput = {
   name: string;
@@ -124,5 +135,16 @@ export async function updateRepresentative(
 
 export async function deactivateRepresentative(publicId: string) {
   const response = await api.delete<{ ok: true }>(`/representatives/${publicId}`);
+  return response.data;
+}
+
+export async function createRepresentativePayout(
+  publicId: string,
+  body: { year: number; month: number; amount: number; paidAt: string },
+) {
+  const response = await api.post<Representative>(
+    `/representatives/${publicId}/payouts`,
+    body,
+  );
   return response.data;
 }

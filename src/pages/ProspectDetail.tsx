@@ -11,10 +11,11 @@ import {
   type GoogleCourtProspect,
   type OutreachStatus,
 } from '../api/prospects';
-import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
+import AppLayout, { BACK_BAR, PAGE_SHELL } from '../components/AppLayout';
 import { OutreachBadge } from '../components/Badge';
-import Button from '../components/Button';
-import Card, { CardLabel } from '../components/Card';
+import Button, { buttonClassName } from '../components/Button';
+import { CardLabel } from '../components/Card';
+import { fieldOutlineBase } from '../components/Input';
 import Select from '../components/Select';
 import { ClientDetailSkeleton } from '../components/Skeleton';
 import { formatDateTime, formatPhone } from '../utils/format';
@@ -116,11 +117,11 @@ export default function ProspectDetailPage() {
   return (
     <AppLayout>
       <section className={PAGE_SHELL}>
-        <div className="flex shrink-0 items-center gap-1 border-b border-border bg-surface px-2 py-1.5 lg:px-6">
+        <div className={BACK_BAR}>
           <Link
             to="/prospectos"
             aria-label="Voltar para prospectos"
-            className="mpn-tap flex size-9 items-center justify-center rounded-md text-fg hover:bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
+            className="mpn-tap flex size-9 items-center justify-center rounded-md text-fg hover:bg-arena-hover"
           >
             <MdArrowBack size={20} aria-hidden />
           </Link>
@@ -139,8 +140,7 @@ export default function ProspectDetailPage() {
           {loading && !prospect ? <ClientDetailSkeleton /> : null}
 
           {prospect ? (
-            <div className="space-y-4">
-              <Card>
+            <>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-base font-semibold text-fg">
@@ -188,7 +188,7 @@ export default function ProspectDetailPage() {
                       onClick={() => {
                         void onWhatsApp();
                       }}
-                      className="inline-flex h-9 items-center rounded-md bg-accent px-3 text-sm font-medium text-white hover:bg-fg/90"
+                      className={buttonClassName({ variant: 'primary', size: 'sm' })}
                     >
                       WhatsApp
                     </a>
@@ -202,7 +202,7 @@ export default function ProspectDetailPage() {
                       href={prospect.googleMapsUri}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex h-9 items-center gap-1 rounded-md border border-border bg-surface px-3 text-sm font-medium text-fg hover:bg-canvas"
+                      className={buttonClassName({ variant: 'secondary', size: 'sm' })}
                     >
                       Maps
                       <MdOpenInNew size={14} aria-hidden />
@@ -213,7 +213,7 @@ export default function ProspectDetailPage() {
                       href={prospect.website}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex h-9 items-center gap-1 rounded-md border border-border bg-surface px-3 text-sm font-medium text-fg hover:bg-canvas"
+                      className={buttonClassName({ variant: 'secondary', size: 'sm' })}
                     >
                       Site
                       <MdOpenInNew size={14} aria-hidden />
@@ -225,10 +225,8 @@ export default function ProspectDetailPage() {
                     Último contato {formatDateTime(prospect.contactedAt)}
                   </p>
                 ) : null}
-              </Card>
 
-              <Card aria-labelledby="contato-heading">
-                <form onSubmit={onSave}>
+                <form onSubmit={onSave} className="mt-6" aria-labelledby="contato-heading">
                 <CardLabel id="contato-heading">Acompanhamento</CardLabel>
                 <div className="mt-3">
                   <Select
@@ -258,7 +256,7 @@ export default function ProspectDetailPage() {
                       value={notes}
                       onChange={(event) => setNotes(event.target.value)}
                       rows={4}
-                      className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:ring-1 focus-visible:ring-fg"
+                      className={`${fieldOutlineBase} w-full py-2`}
                       placeholder="Quem atendeu, o que falou, próximo passo…"
                     />
                   </label>
@@ -275,8 +273,7 @@ export default function ProspectDetailPage() {
                   {saving ? 'Salvando…' : 'Salvar'}
                 </Button>
                 </form>
-              </Card>
-            </div>
+            </>
           ) : null}
         </div>
       </section>
