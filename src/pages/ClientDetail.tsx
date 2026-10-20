@@ -7,6 +7,7 @@ import {
   deleteClient,
   getClient,
   markClientPaymentPaid,
+  updateClientAccess,
   updateClientPlan,
   updateClientRepresentative,
   type PlatformClientDetail,
@@ -67,6 +68,9 @@ function AdminClientDetailPage() {
   const [planSheetOpen, setPlanSheetOpen] = useState(false);
   const [representativeSheetOpen, setRepresentativeSheetOpen] = useState(false);
   const [deleteSheetOpen, setDeleteSheetOpen] = useState(false);
+  const [accessSheet, setAccessSheet] = useState<'lock' | 'unlock' | null>(
+    null,
+  );
   const [showAllPayments, setShowAllPayments] = useState(false);
 
   useEffect(() => {
@@ -106,6 +110,12 @@ function AdminClientDetailPage() {
     ? paymentHistory
     : paymentHistory.slice(0, 3);
   const hasMorePayments = paymentHistory.length > 3;
+  const readOnly = client?.accessMode === 'read_only';
+  const canManageWriteAccess = Boolean(
+    client &&
+      client.kind === 'company' &&
+      (readOnly || (!client.isTrial && client.partnerStatus === 'active')),
+  );
 
   return (
     <AppLayout>
@@ -144,6 +154,17 @@ function AdminClientDetailPage() {
 
           {client ? (
             <div className="space-y-4">
+              {readOnly ? (
+                <p
+                  role="status"
+                  className="rounded-md bg-warning-soft px-4 py-3 text-sm leading-5 text-warning"
+                >
+                  Acesso bloqueado por falta de pagamento. A arena consulta a
+                  agenda e não altera reservas. As quadras ficam fora do site
+                  até você liberar.
+                </p>
+              ) : null}
+
               {client.kind === 'onboarding' ||
               client.partnerStatus === 'expired' ||
               (client.owner && !client.owner.emailVerified) ? (
@@ -262,6 +283,39 @@ function AdminClientDetailPage() {
                     <p className="mt-0.5 text-sm text-fg-muted">
                       {client.plan?.name || 'Sem plano'}
                     </p>
+
+                    {canManageWriteAccess ? (
+                      <>
+                        <header className="mt-6">
+                          <CardLabel id="acesso-heading">Acesso</CardLabel>
+                        </header>
+                        <p className="mt-2 text-sm font-medium text-fg">
+                          {readOnly
+                            ? 'Acesso bloqueado por falta de pagamento'
+                            : 'Acesso liberado'}
+                        </p>
+                        <div className="mt-1">
+                          <TextAction
+                            onClick={() =>
+                              setAccessSheet(readOnly ? 'unlock' : 'lock')
+                            }
+                          >
+                            {readOnly
+                              ? 'Liberar acesso'
+                              : 'Bloquear acesso por falta de pagamento'}
+                          </TextAction>
+                        </div>
+                        <p className="mt-0.5 text-sm text-fg-muted">
+                          {readOnly
+                            ? `A arena consulta a agenda, mas não altera reservas.${
+                                client.accessRestrictedAt
+                                  ? ` Desde ${formatDate(client.accessRestrictedAt)}.`
+                                  : ''
+                              }`
+                            : 'A arena cria, altera e cancela reservas normalmente.'}
+                        </p>
+                      </>
+                    ) : null}
 
                     <header className="mt-6 flex items-center justify-between gap-3">
                       <CardLabel id="pagamentos-heading">Pagamentos</CardLabel>
@@ -408,6 +462,15 @@ function AdminClientDetailPage() {
               client={client}
               onClose={() => setDeleteSheetOpen(false)}
               onDeleted={() => navigate('/clientes', { replace: true })}
+            />
+          ) : null}
+          {client && canManageWriteAccess ? (
+            <AccessSheet
+              isOpen={accessSheet != null}
+              mode={accessSheet ?? 'lock'}
+              publicId={companyPublicId}
+              onClose={() => setAccessSheet(null)}
+              onSaved={refreshClient}
             />
           ) : null}
         </>
@@ -955,6 +1018,91 @@ function DeleteClientSheet({
           disabled={submitting || !canConfirm}
         >
           {submitting ? 'Excluindo…' : 'Excluir definitivamente'}
+        </Button>
+      </form>
+    </FormSheet>
+  );
+}
+
+function AccessSheet({
+  isOpen,
+  mode,
+  publicId,
+  onClose,
+  onSaved,
+}: {
+  isOpen: boolean;
+  mode: 'lock' | 'unlock';
+  publicId: string;
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const locking = mode === 'lock';
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setFormError('');
+    setSubmitting(false);
+  }, [isOpen, mode]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setFormError('');
+    try {
+      await updateClientAccess(publicId, locking
+        ? { accessMode: 'read_only', reason: 'delinquency' }
+        : { accessMode: 'full' });
+      await onSaved();
+      onClose();
+    } catch (error) {
+      setFormError(
+        getApiErrorMessage(
+          error,
+          locking
+            ? 'Não foi possível bloquear o acesso por falta de pagamento.'
+            : 'Não foi possível liberar o acesso.',
+        ),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <FormSheet
+      isOpen={isOpen}
+      title={
+        locking
+          ? 'Bloquear acesso por falta de pagamento'
+          : 'Liberar acesso'
+      }
+      onClose={onClose}
+    >
+      <form onSubmit={handleSubmit} className="space-y-1">
+        <p className="mb-3 text-sm leading-5 text-fg-muted">
+          {locking
+            ? 'A arena continua vendo a agenda. Reservar, cancelar e alterar horários ficam pausados, e as quadras saem do site. O dono vê um aviso sobre a mensalidade em aberto, com caminho para pagar. Quando o pagamento for confirmado, a escrita volta sozinha.'
+            : 'A arena volta a reservar e alterar horários. As quadras que estavam publicadas reaparecem no site.'}
+        </p>
+        {formError ? (
+          <p className="mb-3 text-sm font-medium text-danger" role="alert">
+            {formError}
+          </p>
+        ) : null}
+        <Button
+          type="submit"
+          variant={locking ? 'dangerOutline' : 'primary'}
+          fullWidth
+          disabled={submitting}
+        >
+          {submitting
+            ? 'Salvando…'
+            : locking
+              ? 'Bloquear acesso por falta de pagamento'
+              : 'Liberar acesso'}
         </Button>
       </form>
     </FormSheet>

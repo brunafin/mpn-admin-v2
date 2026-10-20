@@ -226,6 +226,11 @@ export default function ClientsPage() {
                     badge={
                       <SituationBadge situation={clientSituation(item)} />
                     }
+                    subtitle={
+                      item.accessMode === 'read_only'
+                        ? 'Acesso bloqueado por falta de pagamento'
+                        : undefined
+                    }
                     meta={`Último acesso ${formatDateTime(item.owner?.lastLoginAt)}`}
                   />
                 </li>
