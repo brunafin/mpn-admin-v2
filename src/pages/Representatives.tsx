@@ -11,7 +11,7 @@ import Button from '../components/Button';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
-import ListRow, { listClassName } from '../components/ListRow';
+import ListRow, { directoryListClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import { ClientsListSkeleton } from '../components/Skeleton';
 import { formatPhoneMask, onlyPhoneDigits } from '../utils/formatPhone';
@@ -59,7 +59,9 @@ export default function RepresentativesPage() {
         />
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
-          {loading && items.length === 0 ? <ClientsListSkeleton /> : null}
+          {loading && items.length === 0 ? (
+            <ClientsListSkeleton separated />
+          ) : null}
           {error ? (
             <p className="mb-3 text-sm font-medium text-danger" role="alert">
               {error}
@@ -83,10 +85,11 @@ export default function RepresentativesPage() {
           ) : null}
 
           {items.length > 0 ? (
-            <ul className={listClassName}>
+            <ul className={directoryListClassName}>
               {items.map((item) => (
                 <li key={item.publicId}>
                   <ListRow
+                    card
                     to={`/representantes/${item.publicId}`}
                     title={item.name}
                     subtitle={`${item.companiesCount} ${

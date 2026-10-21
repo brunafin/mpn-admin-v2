@@ -20,7 +20,7 @@ import { isRepresentativeToken } from '../components/ProtectedRoute';
 import SellerCompanyPage from './SellerCompany';
 import { SituationBadge } from '../components/Badge';
 import Button from '../components/Button';
-import { CardLabel } from '../components/Card';
+import Card, { CardLabel } from '../components/Card';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
 import Checkbox from '../components/Checkbox';
@@ -28,24 +28,22 @@ import Select from '../components/Select';
 import MonthYearWheelPicker from '../components/MonthYearWheelPicker';
 import { ClientDetailSkeleton } from '../components/Skeleton';
 import { formatCurrencyBRL } from '../utils/formatCurrency';
-import { formatPhoneMask } from '../utils/formatPhone';
 import { computeMonthlyFee } from '../utils/computeMonthlyFee';
 import {
   formatDate,
   formatDateTime,
   formatMonthYear,
+  formatPhone,
 } from '../utils/format';
 import { clientSituation } from '../utils/clientSituation';
-
-const WHATSAPP_BASE =
-  import.meta.env.VITE_WHATSAPP_URL_BASE || 'https://wa.me/55';
+import { whatsappUrl } from '../utils/whatsapp';
 
 /**
  * Hierarquia (dona da plataforma):
- * 1. Arena + dono
- * 2. Quadras
- * 3. Reservas
- * 4. Plano + pagamentos
+ * 1. Contato
+ * 2. Plano, com quadras e acesso
+ * 3. Pagamentos
+ * 4. Representante e comissão
  * 5. Excluir cliente
  */
 export default function ClientDetailPage() {
@@ -100,7 +98,7 @@ function AdminClientDetailPage() {
     setClient(data);
   };
 
-  const ownerPhoneDigits = client?.owner?.phone?.replace(/\D/g, '') || '';
+  const ownerWhatsapp = whatsappUrl(client?.owner?.phone);
   const totalReceived =
     client?.paymentHistory
       ?.filter((payment) => payment.paid)
@@ -110,6 +108,7 @@ function AdminClientDetailPage() {
     ? paymentHistory
     : paymentHistory.slice(0, 3);
   const hasMorePayments = paymentHistory.length > 3;
+  const notice = client ? accountNotice(client) : null;
   const readOnly = client?.accessMode === 'read_only';
   const canManageWriteAccess = Boolean(
     client &&
@@ -153,123 +152,55 @@ function AdminClientDetailPage() {
           ) : null}
 
           {client ? (
-            <div className="space-y-4">
-              {readOnly ? (
+            <div className="space-y-6">
+              {notice ? (
                 <p
                   role="status"
                   className="rounded-md bg-warning-soft px-4 py-3 text-sm leading-5 text-warning"
                 >
-                  Acesso bloqueado por falta de pagamento. A arena consulta a
-                  agenda e não altera reservas. As quadras ficam fora do site
-                  até você liberar.
-                </p>
-              ) : null}
-
-              {client.kind === 'onboarding' ||
-              client.partnerStatus === 'expired' ||
-              (client.owner && !client.owner.emailVerified) ? (
-                <p
-                  role="status"
-                  className="rounded-md bg-warning-soft px-4 py-3 text-sm leading-5 text-warning"
-                >
-                  {client.kind === 'onboarding'
-                    ? 'Em cadastro — ainda sem estabelecimento no sistema.'
-                    : client.partnerStatus === 'expired'
-                      ? 'Trial expirado. Atribua um plano para reativar agenda e site.'
-                      : 'E-mail do dono ainda não confirmado.'}
+                  {notice}
                 </p>
               ) : null}
 
               <section aria-labelledby="arena-heading">
-                <h1
-                  id="arena-heading"
-                  className="truncate text-lg font-semibold tracking-tight text-fg"
-                >
+                <h1 id="arena-heading" className="sr-only">
                   {client.name}
                 </h1>
-                <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    {ownerPhoneDigits ? (
-                      <a
-                        href={`${WHATSAPP_BASE}${ownerPhoneDigits}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={`Abrir WhatsApp de ${client.owner?.name || 'dono'} — ${formatPhoneMask(client.owner?.phone || '')}`}
-                        className="mpn-tap block min-w-0 truncate rounded-md text-sm font-medium text-fg underline-offset-2 hover:underline"
-                      >
-                        {client.owner?.name || 'Sem nome'}
-                      </a>
-                    ) : (
-                      <p className="min-w-0 truncate text-sm font-medium text-fg">
-                        {client.owner?.name || 'Sem nome'}
-                      </p>
-                    )}
-                    {client.isTrial ? (
-                      <p className="mt-0.5 text-sm text-fg-muted">
-                        {client.trialEndsAt
-                          ? `Trial até ${formatDate(client.trialEndsAt)}`
-                          : 'Trial'}
-                      </p>
-                    ) : null}
-                  </div>
-                  <span className="shrink-0 text-xs text-fg-muted">
-                    Último acesso {formatDateTime(client.owner?.lastLoginAt)}
-                  </span>
-                </div>
-                {client.kind === 'company' ? (
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <p className="min-w-0 truncate text-sm text-fg-muted">
-                      Representante{' '}
-                      <span className="text-fg">
-                        {client.representative?.name?.trim() || '—'}
-                      </span>
-                    </p>
-                    <TextAction onClick={() => setRepresentativeSheetOpen(true)}>
-                      {client.representative?.name?.trim() ? 'Alterar' : 'Definir'}
-                    </TextAction>
-                  </div>
+                {ownerWhatsapp ? (
+                  <a
+                    href={ownerWhatsapp}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Abrir WhatsApp de ${client.owner?.name || 'dono'} — ${formatPhone(client.owner?.phone)}`}
+                    className="mpn-tap block min-w-0 truncate text-sm font-medium text-fg underline-offset-2 hover:underline"
+                  >
+                    {client.owner?.name || 'Sem nome'}
+                  </a>
+                ) : (
+                  <p className="min-w-0 truncate text-sm font-medium text-fg">
+                    {client.owner?.name || 'Sem nome'}
+                  </p>
+                )}
+                {client.owner?.phone ? (
+                  <p className="mt-0.5 text-sm text-fg-muted">
+                    {formatPhone(client.owner.phone)}
+                  </p>
+                ) : null}
+                <p className="mt-0.5 text-sm text-fg-muted">
+                  {contactMeta(client)}
+                </p>
+                {client.isTrial && client.trialEndsAt ? (
+                  <p className="mt-0.5 text-sm text-fg-muted">
+                    Trial até {formatDate(client.trialEndsAt)}
+                  </p>
                 ) : null}
               </section>
 
               {client.kind === 'company' ? (
                 <>
-                  <section aria-labelledby="quadras-heading">
-                    <CardLabel id="quadras-heading">Quadras</CardLabel>
-                    <p
-                      className="mt-2 text-sm text-fg"
-                      aria-label={`${client.courtsCount} quadras no total, ${client.visibleCourtsCount} ativas no site`}
-                    >
-                      Total {client.courtsCount}
-                      <span className="mx-2 text-fg-muted" aria-hidden>
-                        ·
-                      </span>
-                      Ativas {client.visibleCourtsCount}
-                    </p>
-                  </section>
-
-                  <section aria-labelledby="reservas-heading">
-                    <CardLabel id="reservas-heading">
-                      Reservas deste mês
-                    </CardLabel>
-                    <p
-                      className="mt-2 text-sm text-fg"
-                      aria-label="Reservas do mês atual"
-                    >
-                      Passadas {client.usage?.pastReservations ?? 0}
-                      <span className="mx-2 text-fg-muted" aria-hidden>
-                        ·
-                      </span>
-                      Futuras {client.usage?.futureReservations ?? 0}
-                      <span className="mx-2 text-fg-muted" aria-hidden>
-                        ·
-                      </span>
-                      Fixos {client.usage?.fixedSlots ?? 0}
-                    </p>
-                  </section>
-
-                  <section aria-labelledby="comercial-heading">
+                  <Card aria-labelledby="plano-heading">
                     <header className="flex items-center justify-between gap-3">
-                      <CardLabel id="comercial-heading">Plano</CardLabel>
+                      <CardLabel id="plano-heading">Plano</CardLabel>
                       <TextAction onClick={() => setPlanSheetOpen(true)}>
                         Alterar
                       </TextAction>
@@ -283,54 +214,49 @@ function AdminClientDetailPage() {
                     <p className="mt-0.5 text-sm text-fg-muted">
                       {client.plan?.name || 'Sem plano'}
                     </p>
-
+                    <p className="mt-0.5 text-sm text-fg-muted">
+                      {planFacts(client)}
+                    </p>
                     {canManageWriteAccess ? (
-                      <>
-                        <header className="mt-6">
-                          <CardLabel id="acesso-heading">Acesso</CardLabel>
-                        </header>
-                        <p className="mt-2 text-sm font-medium text-fg">
-                          {readOnly
-                            ? 'Acesso bloqueado por falta de pagamento'
-                            : 'Acesso liberado'}
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <p className="min-w-0 text-sm text-fg">
+                          {readOnly ? 'Acesso bloqueado' : 'Acesso liberado'}
+                          {readOnly && client.accessRestrictedAt ? (
+                            <span className="text-fg-muted">
+                              {' '}
+                              desde {formatDate(client.accessRestrictedAt)}
+                            </span>
+                          ) : null}
                         </p>
-                        <div className="mt-1">
-                          <TextAction
-                            onClick={() =>
-                              setAccessSheet(readOnly ? 'unlock' : 'lock')
-                            }
-                          >
-                            {readOnly
+                        <TextAction
+                          onClick={() =>
+                            setAccessSheet(readOnly ? 'unlock' : 'lock')
+                          }
+                          aria-label={
+                            readOnly
                               ? 'Liberar acesso'
-                              : 'Bloquear acesso por falta de pagamento'}
-                          </TextAction>
-                        </div>
-                        <p className="mt-0.5 text-sm text-fg-muted">
-                          {readOnly
-                            ? `A arena consulta a agenda, mas não altera reservas.${
-                                client.accessRestrictedAt
-                                  ? ` Desde ${formatDate(client.accessRestrictedAt)}.`
-                                  : ''
-                              }`
-                            : 'A arena cria, altera e cancela reservas normalmente.'}
-                        </p>
-                      </>
+                              : 'Bloquear acesso por falta de pagamento'
+                          }
+                        >
+                          {readOnly ? 'Liberar' : 'Bloquear'}
+                        </TextAction>
+                      </div>
                     ) : null}
+                  </Card>
 
-                    <header className="mt-6 flex items-center justify-between gap-3">
+                  <Card aria-labelledby="pagamentos-heading">
+                    <header className="flex items-center justify-between gap-3">
                       <CardLabel id="pagamentos-heading">Pagamentos</CardLabel>
                       <TextAction onClick={() => setAddMonthOpen(true)}>
                         Adicionar
                       </TextAction>
                     </header>
-
-                    <p className="mt-2 text-sm font-medium text-fg">
-                      {formatCurrencyBRL(totalReceived)}{' '}
-                      <span className="font-normal text-fg-muted">
-                        recebido
-                      </span>
+                    <p className="mt-2 text-sm text-fg-muted">
+                      <span className="font-medium tabular-nums text-fg">
+                        {formatCurrencyBRL(totalReceived)}
+                      </span>{' '}
+                      recebido
                     </p>
-
                     {paymentHistory.length === 0 ? (
                       <p className="mt-3 text-sm text-fg-muted">
                         Nenhum pagamento registrado.
@@ -341,32 +267,34 @@ function AdminClientDetailPage() {
                           {visiblePayments.map((payment) => {
                             const status = paymentStatus(payment);
                             return (
-                              <li key={payment.id}>
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <p className="truncate text-sm font-medium capitalize text-fg">
-                                      {formatMonthYear(payment.dueDate)}
-                                    </p>
-                                    <p className="mt-0.5 text-sm tabular-nums text-fg-muted">
-                                      {formatCurrencyBRL(Number(payment.value))}
-                                    </p>
-                                  </div>
-                                  <div className="flex shrink-0 items-center gap-2">
-                                    <span
-                                      className={`text-xs font-medium ${status.className}`}
+                              <li
+                                key={payment.id}
+                                className="flex items-center justify-between gap-3"
+                              >
+                                <p className="min-w-0 truncate text-sm text-fg">
+                                  <span className="capitalize">
+                                    {formatMonthYear(payment.dueDate)}
+                                  </span>
+                                  <span className="tabular-nums text-fg-muted">
+                                    {' '}
+                                    · {formatCurrencyBRL(Number(payment.value))}
+                                  </span>
+                                </p>
+                                <div className="flex shrink-0 items-center gap-2">
+                                  <span
+                                    className={`text-xs font-medium ${status.className}`}
+                                  >
+                                    {status.label}
+                                  </span>
+                                  {!payment.paid ? (
+                                    <TextAction
+                                      onClick={() =>
+                                        setMarkPaidPayment(payment)
+                                      }
                                     >
-                                      {status.label}
-                                    </span>
-                                    {!payment.paid ? (
-                                      <TextAction
-                                        onClick={() =>
-                                          setMarkPaidPayment(payment)
-                                        }
-                                      >
-                                        Marcar
-                                      </TextAction>
-                                    ) : null}
-                                  </div>
+                                      Marcar
+                                    </TextAction>
+                                  ) : null}
                                 </div>
                               </li>
                             );
@@ -387,33 +315,47 @@ function AdminClientDetailPage() {
                         ) : null}
                       </>
                     )}
-                  </section>
+                  </Card>
 
-                  {client.commissions ? (
-                    <section>
-                      <CardLabel>Comissão do representante</CardLabel>
-                      <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-fg">
-                        {formatCurrencyBRL(client.commissions.total)}
+                  <Card aria-label="Representante">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="min-w-0 truncate text-sm text-fg-muted">
+                        Representante{' '}
+                        <span className="text-fg">
+                          {client.representative?.name?.trim() || '—'}
+                        </span>
                       </p>
-                      <p className="mt-1 text-sm text-fg-muted">
+                      <TextAction
+                        onClick={() => setRepresentativeSheetOpen(true)}
+                      >
+                        {client.representative?.name?.trim()
+                          ? 'Alterar'
+                          : 'Definir'}
+                      </TextAction>
+                    </div>
+                    {client.commissions ? (
+                      <p className="mt-3 text-sm text-fg-muted">
+                        Comissão{' '}
+                        <span className="font-medium tabular-nums text-fg">
+                          {formatCurrencyBRL(client.commissions.total)}
+                        </span>
+                        {' · '}
                         {client.commissions.firstMonthPercent}% da 1ª ·{' '}
-                        {client.commissions.recurringPercent}% das seguintes
+                        {client.commissions.recurringPercent}% depois
                       </p>
-                    </section>
-                  ) : null}
+                    ) : null}
+                  </Card>
                 </>
               ) : null}
 
-              <div className="pt-2">
-                <Button
-                  type="button"
-                  variant="dangerOutline"
-                  fullWidth
-                  onClick={() => setDeleteSheetOpen(true)}
-                >
-                  Excluir cliente
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="dangerOutline"
+                fullWidth
+                onClick={() => setDeleteSheetOpen(true)}
+              >
+                Excluir cliente
+              </Button>
             </div>
           ) : null}
         </div>
@@ -507,6 +449,40 @@ function TextAction({
       {children}
     </button>
   );
+}
+
+function accountNotice(client: PlatformClientDetail): string | null {
+  if (client.accessMode === 'read_only') {
+    return 'Acesso bloqueado por falta de pagamento. A agenda fica só para consulta e as quadras saem do site.';
+  }
+  if (client.kind === 'onboarding') {
+    return 'Em cadastro — ainda sem estabelecimento no sistema.';
+  }
+  if (client.partnerStatus === 'expired') {
+    return 'Trial expirado. Atribua um plano para reativar agenda e site.';
+  }
+  if (client.owner && !client.owner.emailVerified) {
+    return 'E-mail do dono ainda não confirmado.';
+  }
+  return null;
+}
+
+function contactMeta(client: PlatformClientDetail): string {
+  const place = [client.city, client.uf].filter(Boolean).join('/');
+  const access = `Último acesso ${formatDateTime(client.owner?.lastLoginAt)}`;
+  return place ? `${place} · ${access}` : access;
+}
+
+function planFacts(client: PlatformClientDetail): string {
+  const courts =
+    client.courtsCount === 1 ? '1 quadra' : `${client.courtsCount} quadras`;
+  const courtsFact =
+    client.visibleCourtsCount === client.courtsCount
+      ? `${courts} no site`
+      : `${courts} · ${client.visibleCourtsCount} no site`;
+  const facts = [courtsFact];
+  if (client.dayDue) facts.push(`vence dia ${client.dayDue}`);
+  return facts.join(' · ');
 }
 
 function paymentStatus(payment: PlatformPaymentHistoryItem): {

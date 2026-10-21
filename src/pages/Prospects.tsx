@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import axios from 'axios';
-import { MdArrowBack, MdOutlineSearch } from 'react-icons/md';
+import { MdArrowBack, MdOutlineFilterAlt, MdOutlineSearch } from 'react-icons/md';
 import {
   COMPETITOR_LABEL,
   importProspects,
@@ -15,13 +15,14 @@ import {
 } from '../api/prospects';
 import AppLayout, { BACK_BAR, PAGE_SHELL } from '../components/AppLayout';
 import { Badge, OutreachBadge } from '../components/Badge';
-import Button from '../components/Button';
+import Button, { buttonClassName } from '../components/Button';
 import Checkbox from '../components/Checkbox';
 import { choiceRowClass } from '../components/Checkbox/row';
 import CheckMark from '../components/Checkbox/Mark';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
+import FormSheet from '../components/FormSheet';
 import Input, { fieldOutlineClass } from '../components/Input';
-import ListRow, { listClassName } from '../components/ListRow';
+import ListRow, { directoryListClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import Select from '../components/Select';
 import { ClientsListSkeleton } from '../components/Skeleton';
@@ -42,8 +43,6 @@ const STATUS_FILTERS: Array<{ id: '' | OutreachStatus; name: string }> = [
   { id: 'won', name: OUTREACH_LABEL.won },
 ];
 
-const filterSelectClass = `${fieldOutlineClass} w-full appearance-none pr-8`;
-
 export default function ProspectsPage() {
   const [mode, setMode] = useState<'portfolio' | 'search'>('portfolio');
   const [items, setItems] = useState<GoogleCourtProspect[]>([]);
@@ -51,6 +50,7 @@ export default function ProspectsPage() {
   const [cities, setCities] = useState<ProspectCity[]>([]);
   const [cityFilter, setCityFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'' | OutreachStatus>('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -145,86 +145,52 @@ export default function ProspectsPage() {
           ) : null}
 
           {loading && items.length === 0 ? (
-            <ClientsListSkeleton />
+            <ClientsListSkeleton separated />
           ) : (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <label className="block">
-                  <span className="sr-only">Buscar por nome</span>
-                  <input
-                    type="search"
-                    value={visibleQ}
-                    onChange={(event) => setVisibleQ(event.target.value)}
-                    placeholder="Nome, telefone ou endereço"
-                    autoComplete="off"
-                    className={`${fieldOutlineClass} w-full`}
-                  />
-                </label>
-                <label className="block">
-                  <span className="sr-only">Filtrar por cidade</span>
-                  <select
-                    value={cityFilter}
-                    onChange={(event) => setCityFilter(event.target.value)}
-                    className={filterSelectClass}
-                  >
-                    <option value="">Todas as cidades</option>
-                    {cities.map((row) => (
-                      <option
-                        key={`${row.city}|${row.uf || ''}`}
-                        value={`${row.city}|${row.uf || ''}`}
-                      >
-                        {row.city}
-                        {row.uf ? `/${row.uf}` : ''} ({row.count})
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="sr-only">Filtrar por status</span>
-                  <select
-                    value={statusFilter}
-                    onChange={(event) =>
-                      setStatusFilter(event.target.value as '' | OutreachStatus)
-                    }
-                    className={filterSelectClass}
-                  >
-                    {STATUS_FILTERS.map((option) => (
-                      <option key={option.id || 'all'} value={option.id}>
-                        {option.id === '' ? 'Todos os status' : option.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+              <ProspectFilters
+                query={visibleQ}
+                onQueryChange={setVisibleQ}
+                open={filtersOpen}
+                onOpenChange={setFiltersOpen}
+                city={cityFilter}
+                cities={cities}
+                onCityChange={setCityFilter}
+                status={statusFilter}
+                onStatusChange={setStatusFilter}
+              />
 
               {visibleItems.length === 0 ? (
                 <EmptyState
                   title={
-                    items.length === 0
+                    items.length === 0 && !cityFilter && !statusFilter
                       ? 'Portfólio vazio'
                       : 'Nenhuma quadra encontrada'
                   }
                   description={
-                    items.length === 0
+                    items.length === 0 && !cityFilter && !statusFilter
                       ? 'Busque uma cidade no Google e puxe as quadras que quiser acompanhar.'
-                      : 'Ajuste a busca e tente de novo.'
+                      : 'Ajuste a busca ou os filtros e tente de novo.'
                   }
                   action={
-                    <button
-                      type="button"
-                      className={emptyStateActionClassName()}
-                      onClick={() => setMode('search')}
-                    >
-                      Buscar cidade
-                    </button>
+                    items.length === 0 && !cityFilter && !statusFilter ? (
+                      <button
+                        type="button"
+                        className={emptyStateActionClassName()}
+                        onClick={() => setMode('search')}
+                      >
+                        Buscar cidade
+                      </button>
+                    ) : undefined
                   }
                 />
               ) : (
-                <ul className={listClassName}>
+                <ul className={directoryListClassName}>
                   {visibleItems.map((item) => (
                     <li key={item.googlePlaceId}>
                       <ListRow
                         to={`/prospectos/${encodeURIComponent(item.googlePlaceId)}`}
+                        card
                         title={item.name}
                         badge={<OutreachBadge status={item.outreachStatus} />}
                         subtitle={[
@@ -254,6 +220,134 @@ export default function ProspectsPage() {
         </div>
       </section>
     </AppLayout>
+  );
+}
+
+function ProspectFilters({
+  query,
+  onQueryChange,
+  open,
+  onOpenChange,
+  city,
+  cities,
+  onCityChange,
+  status,
+  onStatusChange,
+}: {
+  query: string;
+  onQueryChange: (value: string) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  city: string;
+  cities: ProspectCity[];
+  onCityChange: (value: string) => void;
+  status: '' | OutreachStatus;
+  onStatusChange: (value: '' | OutreachStatus) => void;
+}) {
+  const active = (city ? 1 : 0) + (status ? 1 : 0);
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <label htmlFor="prospecto-busca" className="sr-only">
+            Buscar por nome
+          </label>
+          <input
+            id="prospecto-busca"
+            type="search"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="Nome, telefone ou endereço"
+            autoComplete="off"
+            className={`${fieldOutlineClass} w-full pe-11`}
+          />
+          <span className="pointer-events-none absolute right-0.5 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center text-fg-muted">
+            <MdOutlineSearch size={18} aria-hidden />
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => onOpenChange(true)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label={
+            active
+              ? `Filtros, ${active} ${active === 1 ? 'selecionado' : 'selecionados'}`
+              : 'Filtros'
+          }
+          className={buttonClassName({
+            variant: active ? 'primary' : 'secondary',
+            size: 'md',
+            className: 'shrink-0 px-3',
+          })}
+        >
+          <MdOutlineFilterAlt size={18} aria-hidden />
+          Filtros
+          {active ? <span className="tabular-nums">{active}</span> : null}
+        </button>
+      </div>
+
+      <FormSheet
+        isOpen={open}
+        title="Filtros"
+        onClose={() => onOpenChange(false)}
+      >
+        <label htmlFor="prospectos-cidade" className="mb-3 block">
+          <span className="mb-1.5 block text-sm font-medium text-fg">
+            Cidade
+          </span>
+          <select
+            id="prospectos-cidade"
+            value={city}
+            onChange={(event) => onCityChange(event.target.value)}
+            className={`${fieldOutlineClass} w-full`}
+          >
+            <option value="">Todas as cidades</option>
+            {cities.map((row) => (
+              <option
+                key={`${row.city}|${row.uf || ''}`}
+                value={`${row.city}|${row.uf || ''}`}
+              >
+                {row.city}
+                {row.uf ? `/${row.uf}` : ''} ({row.count})
+              </option>
+            ))}
+          </select>
+        </label>
+        <label htmlFor="prospectos-status" className="mb-3 block">
+          <span className="mb-1.5 block text-sm font-medium text-fg">
+            Status
+          </span>
+          <select
+            id="prospectos-status"
+            value={status}
+            onChange={(event) =>
+              onStatusChange(event.target.value as '' | OutreachStatus)
+            }
+            className={`${fieldOutlineClass} w-full`}
+          >
+            {STATUS_FILTERS.map((option) => (
+              <option key={option.id || 'all'} value={option.id}>
+                {option.id === '' ? 'Todos os status' : option.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {active ? (
+          <button
+            type="button"
+            onClick={() => {
+              onCityChange('');
+              onStatusChange('');
+            }}
+            className={buttonClassName({ variant: 'ghost', fullWidth: true })}
+          >
+            Limpar filtros
+          </button>
+        ) : null}
+      </FormSheet>
+    </>
   );
 }
 

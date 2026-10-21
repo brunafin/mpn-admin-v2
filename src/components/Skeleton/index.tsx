@@ -18,20 +18,28 @@ export function SkeletonBone({ className = '' }: SkeletonBoneProps) {
 type ClientsListSkeletonProps = {
   count?: number;
   className?: string;
+  /** Cada linha é um cartão, como a lista de clientes. */
+  separated?: boolean;
 };
 
 export function ClientsListSkeleton({
   count = 6,
   className = '',
+  separated = false,
 }: ClientsListSkeletonProps) {
   return (
     <ul
-      className={`${listClassName} ${className}`}
+      className={`${separated ? 'space-y-3' : listClassName} ${className}`}
       aria-label="Carregando clientes"
       aria-busy="true"
     >
       {Array.from({ length: count }).map((_, index) => (
-        <li key={index} className="flex items-center gap-3 px-4 py-3">
+        <li
+          key={index}
+          className={`flex items-center gap-3 px-4 py-3 ${
+            separated ? cardClassName : ''
+          }`}
+        >
           <div className="min-w-0 flex-1 animate-pulse space-y-2">
             <div className="flex items-center gap-2">
               <SkeletonBone className="h-4 w-2/3 max-w-[12rem]" />
@@ -54,19 +62,19 @@ export function ClientDetailSkeleton({ className = '' }: { className?: string })
       aria-busy="true"
     >
       <div>
-        <SkeletonBone className="h-5 w-40" />
-        <SkeletonBone className="mt-2 h-4 w-32" />
-        <SkeletonBone className="mt-2 h-3.5 w-48" />
+        <SkeletonBone className="h-4 w-40" />
+        <SkeletonBone className="mt-2 h-3.5 w-28" />
+        <SkeletonBone className="mt-2 h-3.5 w-56" />
       </div>
-      <div>
+      <div className={`${cardClassName} space-y-2 px-4 py-4`}>
         <SkeletonBone className="h-3 w-16" />
-        <SkeletonBone className="mt-3 h-7 w-28" />
-        <SkeletonBone className="mt-2 h-4 w-40" />
+        <SkeletonBone className="h-4 w-24" />
+        <SkeletonBone className="h-3.5 w-40" />
       </div>
-      <div>
-        <SkeletonBone className="h-3 w-20" />
-        <SkeletonBone className="mt-3 h-4 w-full" />
-        <SkeletonBone className="mt-2 h-4 w-2/3" />
+      <div className={`${cardClassName} space-y-2 px-4 py-4`}>
+        <SkeletonBone className="h-3 w-24" />
+        <SkeletonBone className="h-4 w-full" />
+        <SkeletonBone className="h-4 w-2/3" />
       </div>
     </div>
   );

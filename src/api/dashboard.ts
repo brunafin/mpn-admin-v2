@@ -14,6 +14,17 @@ export type DashboardRecentLogin = {
   lastLoginAt: string;
 };
 
+export type DashboardOverdueClient = {
+  publicId: string;
+  name: string;
+  ownerName: string | null;
+  phone: string | null;
+  amount: number;
+  oldestDueDate: string;
+  overdueCount: number;
+  daysOverdue: number;
+};
+
 export type PlatformDashboard = {
   clients: number;
   arenas: number;
@@ -30,6 +41,7 @@ export type PlatformDashboard = {
   trialsEndingSoon: DashboardTrialEndingSoon[];
   recentLogins: DashboardRecentLogin[];
   lastHourLogins: DashboardRecentLogin[];
+  overdueClients: DashboardOverdueClient[];
 };
 
 export async function getDashboard() {

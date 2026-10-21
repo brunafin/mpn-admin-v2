@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { MdOutlineChevronRight } from 'react-icons/md';
-import { surfaceShadowClass } from '../Card';
+import { cardClassName, surfaceShadowClass } from '../Card';
 
 type ListRowProps = {
   to?: string;
@@ -12,12 +12,17 @@ type ListRowProps = {
   badge?: ReactNode;
   children?: ReactNode;
   showChevron?: boolean;
+  /** Cada linha é o próprio cartão. */
+  card?: boolean;
   className?: string;
   'aria-label'?: string;
 };
 
-/** Lista sobre o cartão. As linhas se separam pelo espaço e pelo hover, sem traço. */
+/** Fila curta num único cartão (atraso, acessos). */
 export const listClassName = `overflow-hidden rounded-lg bg-surface ${surfaceShadowClass}`;
+
+/** Cadastro: um cartão por item, com espaço entre eles. */
+export const directoryListClassName = 'space-y-3';
 
 const rowClass =
   'mpn-tap flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-arena-hover';
@@ -31,6 +36,7 @@ export default function ListRow({
   badge,
   children,
   showChevron,
+  card = false,
   className = '',
   'aria-label': ariaLabel,
 }: ListRowProps) {
@@ -61,7 +67,9 @@ export default function ListRow({
     </>
   );
 
-  const cls = `${rowClass} ${className}`.trim();
+  const cls = [rowClass, card ? cardClassName : '', className]
+    .filter(Boolean)
+    .join(' ');
 
   if (to) {
     return (

@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getDashboard, type PlatformDashboard } from '../api/dashboard';
+import {
+  getDashboard,
+  type DashboardOverdueClient,
+  type PlatformDashboard,
+} from '../api/dashboard';
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
+import { buttonClassName } from '../components/Button';
 import { CardLabel, surfaceShadowClass } from '../components/Card';
 import { badgeToneClass } from '../components/Badge';
 import { listClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
-import { formatMinutesAgo } from '../utils/format';
+import { formatCurrency, formatMinutesAgo } from '../utils/format';
+import {
+  paymentReminderMessage,
+  whatsappUrlWithText,
+} from '../utils/whatsapp';
 import { isRepresentativeToken } from '../components/ProtectedRoute';
 import SellerHomePage from './SellerHome';
 
@@ -26,6 +35,7 @@ const emptyDashboard: PlatformDashboard = {
   trialsEndingSoon: [],
   recentLogins: [],
   lastHourLogins: [],
+  overdueClients: [],
 };
 
 export default function HomePage() {
@@ -108,6 +118,8 @@ function AdminHomePage() {
                 <MetricGrid items={metrics} className="mt-2" />
               </section>
 
+              <OverdueClientsSection clients={stats.overdueClients ?? []} />
+
               <section aria-labelledby="online-heading">
                 <div className="mb-2 flex items-baseline justify-between gap-3">
                   <CardLabel id="online-heading">
@@ -158,6 +170,91 @@ function AdminHomePage() {
         </div>
       </section>
     </AppLayout>
+  );
+}
+
+function overdueSubtitle(item: DashboardOverdueClient): string {
+  const money = formatCurrency(item.amount);
+  const when =
+    item.daysOverdue === 1 ? 'há 1 dia' : `há ${item.daysOverdue} dias`;
+  const parcels =
+    item.overdueCount > 1 ? `${item.overdueCount} parcelas` : null;
+  return [item.ownerName?.trim() || null, parcels, money, when]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+function OverdueClientsSection({
+  clients,
+}: {
+  clients: DashboardOverdueClient[];
+}) {
+  return (
+    <section aria-labelledby="atraso-heading">
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <CardLabel id="atraso-heading" as="h2">
+          Em atraso
+        </CardLabel>
+        {clients.length ? (
+          <p className="text-sm tabular-nums text-fg-muted">{clients.length}</p>
+        ) : null}
+      </div>
+      {clients.length ? (
+        <ul className={listClassName}>
+          {clients.map((item) => {
+            const reminder = whatsappUrlWithText(
+              item.phone,
+              paymentReminderMessage({
+                ownerName: item.ownerName,
+                arenaName: item.name,
+                amountLabel: formatCurrency(item.amount),
+                dueDate: item.oldestDueDate,
+                overdueCount: item.overdueCount,
+              }),
+            );
+            return (
+              <li
+                key={item.publicId}
+                className="flex items-center gap-3 px-4 py-3"
+              >
+                <Link
+                  to={`/clientes/${item.publicId}`}
+                  className="mpn-tap min-w-0 flex-1 rounded-md hover:bg-arena-hover"
+                >
+                  <span className="block truncate text-sm font-medium text-fg">
+                    {item.name}
+                  </span>
+                  <span className="mt-0.5 block truncate text-sm text-fg-muted">
+                    {overdueSubtitle(item)}
+                  </span>
+                </Link>
+                {reminder ? (
+                  <a
+                    href={reminder}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Lembrar ${item.name} do pagamento no WhatsApp`}
+                    className={buttonClassName({
+                      variant: 'primary',
+                      size: 'sm',
+                      className: 'shrink-0',
+                    })}
+                  >
+                    WhatsApp
+                  </a>
+                ) : (
+                  <span className="shrink-0 text-xs text-fg-muted">
+                    Sem telefone
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="text-sm text-fg-muted">Nenhum cliente em atraso.</p>
+      )}
+    </section>
   );
 }
 

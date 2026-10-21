@@ -1,14 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
-import { MdOutlineSearch } from 'react-icons/md';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { MdOutlineFilterAlt, MdOutlineSearch } from 'react-icons/md';
 import {
   listClients,
   type PlatformClientListItem,
 } from '../api/clients';
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
 import { SituationBadge } from '../components/Badge';
+import { buttonClassName } from '../components/Button';
 import EmptyState from '../components/EmptyState';
+import FormSheet from '../components/FormSheet';
 import { fieldOutlineClass } from '../components/Input';
-import ListRow, { listClassName } from '../components/ListRow';
+import ListRow, { directoryListClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import { ClientsListSkeleton } from '../components/Skeleton';
 import {
@@ -49,6 +51,23 @@ async function fetchAllClients() {
   return items;
 }
 
+function FilterField({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  children: ReactNode;
+}) {
+  return (
+    <label htmlFor={htmlFor} className="mb-3 block">
+      <span className="mb-1.5 block text-sm font-medium text-fg">{label}</span>
+      {children}
+    </label>
+  );
+}
+
 function lastAccessTime(item: PlatformClientListItem) {
   const value = item.owner?.lastLoginAt;
   if (!value) return null;
@@ -62,6 +81,7 @@ export default function ClientsPage() {
   const [sort, setSort] = useState<SortId>('name');
   const [status, setStatus] = useState<'' | ClientSituation>('');
   const [city, setCity] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -129,12 +149,21 @@ export default function ClientsPage() {
     });
   }, [items, q, sort, status, city]);
 
+  const activeFilters =
+    (sort !== 'name' ? 1 : 0) + (status ? 1 : 0) + (city ? 1 : 0);
+
+  const clearFilters = () => {
+    setSort('name');
+    setStatus('');
+    setCity('');
+  };
+
   return (
     <AppLayout>
       <section className={PAGE_SHELL}>
         <PageHeader title="Clientes">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
-            <div className="relative">
+          <div className="flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
               <label htmlFor="gerente" className="sr-only">
                 Buscar pelo gerente
               </label>
@@ -152,53 +181,94 @@ export default function ClientsPage() {
                 <MdOutlineSearch size={18} aria-hidden />
               </span>
             </div>
-            <label className="block">
-              <span className="sr-only">Ordenar</span>
-              <select
-                value={sort}
-                onChange={(event) => setSort(event.target.value as SortId)}
-                className={`${fieldOutlineClass} w-full`}
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="sr-only">Filtrar por status</span>
-              <select
-                value={status}
-                onChange={(event) =>
-                  setStatus(event.target.value as '' | ClientSituation)
-                }
-                className={`${fieldOutlineClass} w-full`}
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.id || 'all'} value={option.id}>
-                    {option.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="sr-only">Filtrar por cidade</span>
-              <select
-                value={city}
-                onChange={(event) => setCity(event.target.value)}
-                className={`${fieldOutlineClass} w-full`}
-              >
-                <option value="">Todas as cidades</option>
-                {cities.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={filtersOpen}
+              aria-label={
+                activeFilters
+                  ? `Filtros, ${activeFilters} ${activeFilters === 1 ? 'selecionado' : 'selecionados'}`
+                  : 'Filtros'
+              }
+              className={buttonClassName({
+                variant: activeFilters ? 'primary' : 'secondary',
+                size: 'md',
+                className: 'shrink-0 px-3',
+              })}
+            >
+              <MdOutlineFilterAlt size={18} aria-hidden />
+              Filtros
+              {activeFilters ? (
+                <span className="tabular-nums">{activeFilters}</span>
+              ) : null}
+            </button>
           </div>
         </PageHeader>
+
+        <FormSheet
+          isOpen={filtersOpen}
+          title="Filtros"
+          onClose={() => setFiltersOpen(false)}
+        >
+          <FilterField label="Ordenar" htmlFor="clientes-ordenar">
+            <select
+              id="clientes-ordenar"
+              value={sort}
+              onChange={(event) => setSort(event.target.value as SortId)}
+              className={`${fieldOutlineClass} w-full`}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </FilterField>
+          <FilterField label="Status" htmlFor="clientes-status">
+            <select
+              id="clientes-status"
+              value={status}
+              onChange={(event) =>
+                setStatus(event.target.value as '' | ClientSituation)
+              }
+              className={`${fieldOutlineClass} w-full`}
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.id || 'all'} value={option.id}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </FilterField>
+          <FilterField label="Cidade" htmlFor="clientes-cidade">
+            <select
+              id="clientes-cidade"
+              value={city}
+              onChange={(event) => setCity(event.target.value)}
+              className={`${fieldOutlineClass} w-full`}
+            >
+              <option value="">Todas as cidades</option>
+              {cities.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </FilterField>
+          {activeFilters ? (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className={buttonClassName({
+                variant: 'ghost',
+                fullWidth: true,
+              })}
+            >
+              Limpar filtros
+            </button>
+          ) : null}
+        </FormSheet>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
           {error ? (
@@ -207,7 +277,9 @@ export default function ClientsPage() {
             </p>
           ) : null}
 
-          {loading && items.length === 0 ? <ClientsListSkeleton /> : null}
+          {loading && items.length === 0 ? (
+            <ClientsListSkeleton separated />
+          ) : null}
 
           {!loading && visibleItems.length === 0 ? (
             <EmptyState
@@ -217,11 +289,12 @@ export default function ClientsPage() {
           ) : null}
 
           {visibleItems.length > 0 ? (
-            <ul className={listClassName} aria-busy={loading}>
+            <ul className={directoryListClassName} aria-busy={loading}>
               {visibleItems.map((item) => (
                 <li key={`${item.kind}-${item.publicId}`}>
                   <ListRow
                     to={`/clientes/${item.publicId}`}
+                    card
                     title={item.name}
                     badge={
                       <SituationBadge situation={clientSituation(item)} />

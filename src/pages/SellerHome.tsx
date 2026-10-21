@@ -4,7 +4,7 @@ import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
 import { SituationBadge } from '../components/Badge';
 import { metricTileClass } from '../components/Card';
 import EmptyState from '../components/EmptyState';
-import ListRow, { listClassName } from '../components/ListRow';
+import ListRow, { directoryListClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import { ClientsListSkeleton } from '../components/Skeleton';
 import { clientSituation } from '../utils/clientSituation';
@@ -46,7 +46,9 @@ export default function SellerHomePage() {
             </p>
           ) : null}
 
-          {loading && !portfolio ? <ClientsListSkeleton /> : null}
+          {loading && !portfolio ? (
+            <ClientsListSkeleton separated />
+          ) : null}
 
           {portfolio ? (
             <>
@@ -75,12 +77,13 @@ export default function SellerHomePage() {
                   description="Quando uma arena for atribuída a você, ela aparece aqui."
                 />
               ) : (
-                <ul className={listClassName}>
+                <ul className={directoryListClassName}>
                   {companies.map((company) => {
                     const situation = clientSituation(company);
                     return (
                       <li key={company.publicId}>
                         <ListRow
+                          card
                           to={`/clientes/${company.publicId}`}
                           title={company.name}
                           badge={<SituationBadge situation={situation} />}

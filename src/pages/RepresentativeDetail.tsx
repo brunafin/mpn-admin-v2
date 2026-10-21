@@ -15,7 +15,7 @@ import Button from '../components/Button';
 import Card, { CardLabel } from '../components/Card';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
-import ListRow, { listClassName } from '../components/ListRow';
+import ListRow, { directoryListClassName } from '../components/ListRow';
 import MonthYearWheelPicker from '../components/MonthYearWheelPicker';
 import { ClientDetailSkeleton } from '../components/Skeleton';
 import { clientSituation } from '../utils/clientSituation';
@@ -235,10 +235,11 @@ export default function RepresentativeDetailPage() {
                     cliente.
                   </p>
                 ) : (
-                  <ul className={`mt-3 ${listClassName}`}>
+                  <ul className={`mt-3 ${directoryListClassName}`}>
                     {item.companies.map((company) => (
                       <li key={company.publicId}>
                         <ListRow
+                          card
                           to={`/clientes/${company.publicId}`}
                           title={company.name}
                           badge={
