@@ -1,4 +1,5 @@
 import {
+  MdOutlineConstruction,
   MdOutlineDashboard,
   MdOutlineHandshake,
   MdOutlinePayments,
@@ -53,6 +54,14 @@ export const ADMIN_NAV = [
     description: 'Gastos da plataforma',
     Icon: MdOutlineReceiptLong,
     match: (path: string) => path === '/custos' || path.startsWith('/custos/'),
+  },
+  {
+    to: '/manutencao',
+    label: 'Manutenção',
+    description: 'Site público',
+    Icon: MdOutlineConstruction,
+    match: (path: string) => path === '/manutencao',
+    separated: true,
   },
 ] as const;
 

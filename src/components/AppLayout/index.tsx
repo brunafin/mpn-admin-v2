@@ -42,10 +42,17 @@ function AppLayout({ children }: AppLayoutProps) {
 
           <nav aria-label="Navegação principal" className="flex-1 px-2 py-1">
             <ul className="flex flex-col gap-0.5">
-              {nav.map(({ to, label, Icon, match }) => {
+              {nav.map((item) => {
+                const { to, label, Icon, match } = item;
+                const separated = 'separated' in item && item.separated;
                 const isActive = match(location.pathname);
                 return (
                   <li key={to}>
+                    {separated ? (
+                      <p className="px-2.5 pb-1 pt-4 text-xs font-medium text-fg-muted">
+                        Sistema
+                      </p>
+                    ) : null}
                     <Link
                       to={to}
                       aria-current={isActive ? 'page' : undefined}
