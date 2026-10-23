@@ -7,6 +7,7 @@ type AlertProps = {
   children?: ReactNode;
   confirmLabel: string;
   confirmVariant?: Extract<ButtonVariant, "primary" | "danger">;
+  confirmDisabled?: boolean;
   onConfirm: () => void;
   dismissLabel?: string;
   onDismiss: () => void;
@@ -22,6 +23,7 @@ export default function Alert({
   children,
   confirmLabel,
   confirmVariant = "primary",
+  confirmDisabled = false,
   onConfirm,
   dismissLabel = "Depois",
   onDismiss,
@@ -75,6 +77,7 @@ export default function Alert({
           <Button
             data-alert-confirm
             variant={confirmVariant}
+            disabled={confirmDisabled}
             onClick={onConfirm}
           >
             {confirmLabel}

@@ -7,9 +7,9 @@ import {
 } from '../api/dashboard';
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
 import { buttonClassName } from '../components/Button';
-import { CardLabel, surfaceShadowClass } from '../components/Card';
+import { CardLabel, cardClassName, surfaceShadowClass } from '../components/Card';
 import { badgeToneClass } from '../components/Badge';
-import { listClassName } from '../components/ListRow';
+import { directoryListClassName, listClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import { formatCurrency, formatMinutesAgo } from '../utils/format';
 import {
@@ -200,7 +200,7 @@ function OverdueClientsSection({
         ) : null}
       </div>
       {clients.length ? (
-        <ul className={listClassName}>
+        <ul className={directoryListClassName}>
           {clients.map((item) => {
             const reminder = whatsappUrlWithText(
               item.phone,
@@ -215,7 +215,7 @@ function OverdueClientsSection({
             return (
               <li
                 key={item.publicId}
-                className="flex items-center gap-3 px-4 py-3"
+                className={`flex items-center gap-3 px-4 py-3 ${cardClassName}`}
               >
                 <Link
                   to={`/clientes/${item.publicId}`}

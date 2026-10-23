@@ -15,9 +15,11 @@ import AppLayout, { BACK_BAR, PAGE_SHELL } from '../components/AppLayout';
 import { OutreachBadge } from '../components/Badge';
 import Button, { buttonClassName } from '../components/Button';
 import { CardLabel } from '../components/Card';
-import { fieldOutlineBase } from '../components/Input';
+import Input, { fieldOutlineBase } from '../components/Input';
 import Select from '../components/Select';
 import { ClientDetailSkeleton } from '../components/Skeleton';
+import { UF_OPTIONS } from '../constants/ufs';
+import { parseCityUfFromAddress, samePlaceName } from '../utils/addressCity';
 import { formatDateTime, formatPhone } from '../utils/format';
 import {
   prospectOutreachMessage,
@@ -41,6 +43,8 @@ export default function ProspectDetailPage() {
   const [status, setStatus] = useState<OutreachStatus>('new');
   const [competitor, setCompetitor] = useState<CourtCompetitor>('unknown');
   const [notes, setNotes] = useState('');
+  const [city, setCity] = useState('');
+  const [uf, setUf] = useState('');
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [savedHint, setSavedHint] = useState('');
@@ -57,6 +61,8 @@ export default function ProspectDetailPage() {
         setStatus(data.outreachStatus);
         setCompetitor(data.competitor);
         setNotes(data.notes || '');
+        setCity(data.city || '');
+        setUf(data.uf || '');
       })
       .catch(() => {
         if (!cancelled) setError('Prospecto não encontrado.');
@@ -74,6 +80,8 @@ export default function ProspectDetailPage() {
     setStatus(data.outreachStatus);
     setCompetitor(data.competitor);
     setNotes(data.notes || '');
+    setCity(data.city || '');
+    setUf(data.uf || '');
   };
 
   const onSave = async (event: FormEvent) => {
@@ -87,6 +95,10 @@ export default function ProspectDetailPage() {
         outreachStatus: status,
         competitor,
         notes,
+        city,
+        ...(uf.trim().length === 2
+          ? { uf: uf.trim().toUpperCase() }
+          : {}),
       });
       applyProspect(data);
       setSavedHint('Salvo.');
@@ -113,6 +125,12 @@ export default function ProspectDetailPage() {
         prospectOutreachMessage(prospect.name),
       )
     : null;
+  const addressCity = parseCityUfFromAddress(prospect?.fullAddress);
+  const addressDiffers = Boolean(
+    addressCity.city &&
+      (!samePlaceName(addressCity.city, city) ||
+        (addressCity.uf || '') !== uf.toUpperCase()),
+  );
 
   return (
     <AppLayout>
@@ -229,6 +247,36 @@ export default function ProspectDetailPage() {
                 <form onSubmit={onSave} className="mt-6" aria-labelledby="contato-heading">
                 <CardLabel id="contato-heading">Acompanhamento</CardLabel>
                 <div className="mt-3">
+                  <Input
+                    name="city"
+                    title="Cidade"
+                    value={city}
+                    onChange={(event) => setCity(event.target.value)}
+                    autoComplete="address-level2"
+                  />
+                  <Select
+                    name="uf"
+                    title="UF"
+                    value={uf}
+                    options={UF_OPTIONS}
+                    onChange={(event) => setUf(event.target.value)}
+                  />
+                  {addressCity && addressDiffers ? (
+                    <p className="mb-3 text-sm text-fg-muted">
+                      O endereço indica {addressCity.city}
+                      {addressCity.uf ? `/${addressCity.uf}` : ''}.{' '}
+                      <button
+                        type="button"
+                        className="font-medium text-fg underline-offset-2 hover:underline"
+                        onClick={() => {
+                          if (addressCity.city) setCity(addressCity.city);
+                          if (addressCity.uf) setUf(addressCity.uf);
+                        }}
+                      >
+                        Usar essa cidade
+                      </button>
+                    </p>
+                  ) : null}
                   <Select
                     name="outreachStatus"
                     title="Status"

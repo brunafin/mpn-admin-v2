@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import axios from 'axios';
 import { MdArrowBack, MdOutlineFilterAlt, MdOutlineSearch } from 'react-icons/md';
 import {
@@ -7,6 +7,7 @@ import {
   listProspectCities,
   listProspects,
   OUTREACH_LABEL,
+  sanitizeProspects,
   searchProspects,
   type GoogleCourtProspect,
   type GoogleCourtSearchHit,
@@ -26,12 +27,11 @@ import ListRow, { directoryListClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import Select from '../components/Select';
 import { ClientsListSkeleton } from '../components/Skeleton';
+import { UF_OPTIONS } from '../constants/ufs';
+import { samePlaceName } from '../utils/addressCity';
 import { formatPhone } from '../utils/format';
 
-const UF_OPTIONS = [
-  'AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT',
-  'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO',
-].map((uf) => ({ id: uf, name: uf }));
+const PAGE_SIZE = 20;
 
 const STATUS_FILTERS: Array<{ id: '' | OutreachStatus; name: string }> = [
   { id: '', name: 'Todos' },
@@ -46,61 +46,91 @@ const STATUS_FILTERS: Array<{ id: '' | OutreachStatus; name: string }> = [
 export default function ProspectsPage() {
   const [mode, setMode] = useState<'portfolio' | 'search'>('portfolio');
   const [items, setItems] = useState<GoogleCourtProspect[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
   const [visibleQ, setVisibleQ] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
   const [cities, setCities] = useState<ProspectCity[]>([]);
   const [cityFilter, setCityFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'' | OutreachStatus>('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sanitizing, setSanitizing] = useState(false);
+  const [sanitizeHint, setSanitizeHint] = useState('');
+  const debouncedQRef = useRef('');
 
-  const load = (opts?: { silent?: boolean }) => {
-    if (!opts?.silent) {
-      setLoading(true);
-      setError('');
-    }
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = visibleQ.trim();
+      if (debouncedQRef.current === next) return;
+      debouncedQRef.current = next;
+      setDebouncedQ(next);
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [visibleQ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
     const cityParts = cityFilter.split('|');
-    return Promise.all([
+    Promise.all([
       listProspects({
+        q: debouncedQ || undefined,
         city: cityParts[0] || undefined,
         uf: cityParts[1] || undefined,
         status: statusFilter,
-        limit: 100,
+        page,
+        limit: PAGE_SIZE,
       }),
       listProspectCities(),
     ])
       .then(([list, cityRows]) => {
+        if (cancelled) return;
         setItems(list.items);
+        setTotal(list.total);
         setCities(cityRows);
         setError('');
       })
       .catch(() => {
-        if (!opts?.silent) {
-          setError('Não foi possível carregar os prospectos.');
-        }
+        if (!cancelled) setError('Não foi possível carregar os prospectos.');
       })
       .finally(() => {
-        if (!opts?.silent) setLoading(false);
+        if (!cancelled) setLoading(false);
       });
+    return () => {
+      cancelled = true;
+    };
+  }, [cityFilter, statusFilter, debouncedQ, page, reloadKey]);
+
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const rangeFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const rangeTo = Math.min(page * PAGE_SIZE, total);
+
+  const onSanitize = async () => {
+    setSanitizing(true);
+    setSanitizeHint('');
+    setError('');
+    try {
+      const result = await sanitizeProspects();
+      setSanitizeHint(
+        result.updated === 0
+          ? 'Nenhuma cidade precisou de correção.'
+          : result.updated === 1
+            ? '1 quadra foi para a cidade do endereço.'
+            : `${result.updated} quadras foram para a cidade do endereço.`,
+      );
+      setPage(1);
+      setReloadKey((current) => current + 1);
+    } catch {
+      setError('Não foi possível corrigir as cidades.');
+    } finally {
+      setSanitizing(false);
+    }
   };
-
-  useEffect(() => {
-    void load();
-    // cityFilter/statusFilter are the server-side filters.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cityFilter, statusFilter]);
-
-  const visibleItems = useMemo(() => {
-    const term = visibleQ.trim().toLowerCase();
-    if (!term) return items;
-    return items.filter((item) => {
-      const haystack = [item.name, item.phone, item.fullAddress, item.city]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(term);
-    });
-  }, [items, visibleQ]);
 
   if (mode === 'search') {
     return (
@@ -108,11 +138,9 @@ export default function ProspectsPage() {
         onBack={() => setMode('portfolio')}
         onImported={(city, uf) => {
           const next = `${city}|${uf}`;
-          if (next === cityFilter) {
-            void load({ silent: true });
-          } else {
-            setCityFilter(next);
-          }
+          setPage(1);
+          if (next !== cityFilter) setCityFilter(next);
+          setReloadKey((current) => current + 1);
           setMode('portfolio');
         }}
       />
@@ -155,25 +183,47 @@ export default function ProspectsPage() {
                 onOpenChange={setFiltersOpen}
                 city={cityFilter}
                 cities={cities}
-                onCityChange={setCityFilter}
+                onCityChange={(value) => {
+                  setCityFilter(value);
+                  setPage(1);
+                }}
                 status={statusFilter}
-                onStatusChange={setStatusFilter}
+                onStatusChange={(value) => {
+                  setStatusFilter(value);
+                  setPage(1);
+                }}
               />
 
-              {visibleItems.length === 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void onSanitize();
+                  }}
+                  disabled={sanitizing}
+                  className="text-sm font-medium text-fg underline-offset-2 hover:underline disabled:opacity-50"
+                >
+                  {sanitizing ? 'Corrigindo…' : 'Corrigir cidades pelo endereço'}
+                </button>
+                {sanitizeHint ? (
+                  <p className="text-sm text-fg-muted">{sanitizeHint}</p>
+                ) : null}
+              </div>
+
+              {items.length === 0 && !loading ? (
                 <EmptyState
                   title={
-                    items.length === 0 && !cityFilter && !statusFilter
+                    !cityFilter && !statusFilter && !debouncedQ
                       ? 'Portfólio vazio'
                       : 'Nenhuma quadra encontrada'
                   }
                   description={
-                    items.length === 0 && !cityFilter && !statusFilter
+                    !cityFilter && !statusFilter && !debouncedQ
                       ? 'Busque uma cidade no Google e puxe as quadras que quiser acompanhar.'
                       : 'Ajuste a busca ou os filtros e tente de novo.'
                   }
                   action={
-                    items.length === 0 && !cityFilter && !statusFilter ? (
+                    !cityFilter && !statusFilter && !debouncedQ ? (
                       <button
                         type="button"
                         className={emptyStateActionClassName()}
@@ -185,8 +235,13 @@ export default function ProspectsPage() {
                   }
                 />
               ) : (
-                <ul className={directoryListClassName}>
-                  {visibleItems.map((item) => (
+                <ul
+                  className={`${directoryListClassName} ${
+                    loading ? 'opacity-60' : ''
+                  }`}
+                  aria-busy={loading}
+                >
+                  {items.map((item) => (
                     <li key={item.googlePlaceId}>
                       <ListRow
                         to={`/prospectos/${encodeURIComponent(item.googlePlaceId)}`}
@@ -215,6 +270,36 @@ export default function ProspectsPage() {
                   ))}
                 </ul>
               )}
+
+              {total > 0 ? (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm tabular-nums text-fg-muted">
+                    {rangeFrom}–{rangeTo} de {total}
+                  </p>
+                  {pageCount > 1 ? (
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={page <= 1 || loading}
+                        onClick={() => setPage((current) => current - 1)}
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={page >= pageCount || loading}
+                        onClick={() => setPage((current) => current + 1)}
+                      >
+                        Próxima
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           )}
         </div>
@@ -405,10 +490,20 @@ function SearchCityView({
         ),
       );
       const withPhone = result.items.filter((hit) => hit.phone).length;
+      const outside = result.outsideCity
+        ? `${result.outsideCity} de outra cidade ficaram de fora`
+        : null;
       setHint(
         result.items.length === 0
-          ? 'Nenhuma quadra relevante nessa busca.'
-          : `${result.found} encontradas · ${withPhone} com telefone · ${result.alreadyInPortfolio} já no portfólio.`,
+          ? outside || 'Nenhuma quadra relevante nessa busca.'
+          : [
+              `${result.found} encontradas`,
+              `${withPhone} com telefone`,
+              `${result.alreadyInPortfolio} já no portfólio`,
+              outside,
+            ]
+              .filter(Boolean)
+              .join(' · '),
       );
     } catch (error) {
       setFormError(getApiErrorMessage(error, 'Não foi possível buscar no Google.'));
@@ -488,8 +583,9 @@ function SearchCityView({
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 lg:px-8">
           <form onSubmit={onSearch} className="max-w-xl">
             <p className="mb-3 text-sm text-fg-muted">
-              Procura “quadra esportiva” e “society” na cidade. Nada entra no
-              portfólio até você puxar as que quiser.
+              Procura “quadra esportiva” e “society” na cidade. Endereço de
+              outra cidade fica de fora. Nada entra no portfólio até você
+              puxar as que quiser.
             </p>
             <Input
               name="city"
@@ -566,56 +662,69 @@ function SearchCityView({
                   className="py-10"
                 />
               ) : (
-                <ul className="flex flex-col gap-2">
-                  {visibleHits.map((hit) => (
-                    <li key={hit.googlePlaceId}>
-                      <label className={choiceRowClass(false, 'w-full items-start!')}>
-                        <input
-                          type="checkbox"
-                          className="peer sr-only"
-                          checked={Boolean(selected[hit.googlePlaceId])}
-                          onChange={(event) =>
-                            setSelected((current) => ({
-                              ...current,
-                              [hit.googlePlaceId]: event.target.checked,
-                            }))
-                          }
-                        />
-                        <CheckMark checked={Boolean(selected[hit.googlePlaceId])} />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex min-w-0 items-center gap-3">
-                            <span className="min-w-0 truncate text-sm font-medium text-fg">
-                              {hit.name}
+                <ul className={directoryListClassName}>
+                  {visibleHits.map((hit) => {
+                    const checked = Boolean(selected[hit.googlePlaceId]);
+                    return (
+                      <li key={hit.googlePlaceId}>
+                        <label
+                          className={choiceRowClass(
+                            checked,
+                            'w-full items-start!',
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            className="peer sr-only"
+                            checked={checked}
+                            onChange={(event) =>
+                              setSelected((current) => ({
+                                ...current,
+                                [hit.googlePlaceId]: event.target.checked,
+                              }))
+                            }
+                          />
+                          <CheckMark checked={checked} />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex min-w-0 items-center gap-3">
+                              <span className="min-w-0 truncate text-sm font-medium text-fg">
+                                {hit.name}
+                              </span>
+                              {hit.inPortfolio ? (
+                                <Badge>No portfólio</Badge>
+                              ) : (
+                                <Badge tone="success">Nova</Badge>
+                              )}
+                              {hit.outreachStatus ? (
+                                <OutreachBadge status={hit.outreachStatus} />
+                              ) : null}
                             </span>
-                            {hit.inPortfolio ? (
-                              <Badge>No portfólio</Badge>
-                            ) : (
-                              <Badge tone="success">Nova</Badge>
-                            )}
-                            {hit.outreachStatus ? (
-                              <OutreachBadge status={hit.outreachStatus} />
+                            <span className="mt-0.5 block truncate text-sm font-normal text-fg-muted">
+                              {[
+                                hit.city &&
+                                (!samePlaceName(hit.city, city) ||
+                                  (hit.uf || '').toUpperCase() !== uf)
+                                  ? [hit.city, hit.uf].filter(Boolean).join('/')
+                                  : null,
+                                hit.phone ? formatPhone(hit.phone) : 'Sem telefone',
+                                hit.competitor !== 'unknown'
+                                  ? COMPETITOR_LABEL[hit.competitor]
+                                  : null,
+                                hit.alreadyRegistered ? 'Já é cliente' : null,
+                              ]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </span>
+                            {hit.fullAddress ? (
+                              <span className="mt-1 block truncate text-xs font-normal text-fg-muted">
+                                {hit.fullAddress}
+                              </span>
                             ) : null}
                           </span>
-                          <span className="mt-0.5 block truncate text-sm text-fg-muted">
-                            {[
-                              hit.phone ? formatPhone(hit.phone) : 'Sem telefone',
-                              hit.competitor !== 'unknown'
-                                ? COMPETITOR_LABEL[hit.competitor]
-                                : null,
-                              hit.alreadyRegistered ? 'Já é cliente' : null,
-                            ]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </span>
-                          {hit.fullAddress ? (
-                            <span className="mt-1 block text-xs text-fg-muted">
-                              {hit.fullAddress}
-                            </span>
-                          ) : null}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
+                        </label>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
 

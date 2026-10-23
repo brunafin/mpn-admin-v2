@@ -15,12 +15,13 @@ import {
 } from '../api/clients';
 import { listPlans, type Plan } from '../api/plans';
 import { listRepresentatives, type RepresentativeListItem } from '../api/representatives';
+import Alert from '../components/Alert';
 import AppLayout, { BACK_BAR, PAGE_SHELL } from '../components/AppLayout';
 import { isRepresentativeToken } from '../components/ProtectedRoute';
 import SellerCompanyPage from './SellerCompany';
 import { SituationBadge } from '../components/Badge';
 import Button from '../components/Button';
-import Card, { CardLabel } from '../components/Card';
+import Card, { CardLabel, cardClassName } from '../components/Card';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
 import Checkbox from '../components/Checkbox';
@@ -41,10 +42,10 @@ import { whatsappUrl } from '../utils/whatsapp';
 /**
  * Hierarquia (dona da plataforma):
  * 1. Contato
- * 2. Plano, com quadras e acesso
+ * 2. Plano e quadras
  * 3. Pagamentos
  * 4. Representante e comissão
- * 5. Excluir cliente
+ * 5. Zona de perigo: bloquear acesso e excluir
  */
 export default function ClientDetailPage() {
   if (isRepresentativeToken()) {
@@ -217,31 +218,6 @@ function AdminClientDetailPage() {
                     <p className="mt-0.5 text-sm text-fg-muted">
                       {planFacts(client)}
                     </p>
-                    {canManageWriteAccess ? (
-                      <div className="mt-4 flex items-center justify-between gap-3">
-                        <p className="min-w-0 text-sm text-fg">
-                          {readOnly ? 'Acesso bloqueado' : 'Acesso liberado'}
-                          {readOnly && client.accessRestrictedAt ? (
-                            <span className="text-fg-muted">
-                              {' '}
-                              desde {formatDate(client.accessRestrictedAt)}
-                            </span>
-                          ) : null}
-                        </p>
-                        <TextAction
-                          onClick={() =>
-                            setAccessSheet(readOnly ? 'unlock' : 'lock')
-                          }
-                          aria-label={
-                            readOnly
-                              ? 'Liberar acesso'
-                              : 'Bloquear acesso por falta de pagamento'
-                          }
-                        >
-                          {readOnly ? 'Liberar' : 'Bloquear'}
-                        </TextAction>
-                      </div>
-                    ) : null}
                   </Card>
 
                   <Card aria-labelledby="pagamentos-heading">
@@ -348,14 +324,57 @@ function AdminClientDetailPage() {
                 </>
               ) : null}
 
-              <Button
-                type="button"
-                variant="dangerOutline"
-                fullWidth
-                onClick={() => setDeleteSheetOpen(true)}
-              >
-                Excluir cliente
-              </Button>
+              <section aria-labelledby="perigo-heading" className="space-y-3">
+                <CardLabel id="perigo-heading">Zona de perigo</CardLabel>
+                {canManageWriteAccess ? (
+                  <div
+                    className={`${cardClassName} flex items-center justify-between gap-3 px-4 py-4`}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-fg">
+                        {readOnly ? 'Acesso bloqueado' : 'Bloquear acesso'}
+                      </p>
+                      <p className="mt-0.5 text-sm text-fg-muted">
+                        {readOnly
+                          ? client.accessRestrictedAt
+                            ? `Desde ${formatDate(client.accessRestrictedAt)}. A agenda fica só para consulta.`
+                            : 'A agenda fica só para consulta.'
+                          : 'Pausa reservas e tira as quadras do site.'}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant={readOnly ? 'secondary' : 'dangerOutline'}
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() =>
+                        setAccessSheet(readOnly ? 'unlock' : 'lock')
+                      }
+                    >
+                      {readOnly ? 'Liberar' : 'Bloquear'}
+                    </Button>
+                  </div>
+                ) : null}
+                <div
+                  className={`${cardClassName} flex items-center justify-between gap-3 px-4 py-4`}
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-fg">Excluir cliente</p>
+                    <p className="mt-0.5 text-sm text-fg-muted">
+                      Apaga o cadastro. Não tem volta.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="dangerOutline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => setDeleteSheetOpen(true)}
+                  >
+                    Excluir
+                  </Button>
+                </div>
+              </section>
             </div>
           ) : null}
         </div>
@@ -942,8 +961,8 @@ function DeleteClientSheet({
       sensitivity: 'accent',
     }) === 0;
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async () => {
+    if (submitting) return;
     if (!canConfirm) {
       setFormError('Digite o nome do cliente exatamente como aparece.');
       return;
@@ -964,16 +983,27 @@ function DeleteClientSheet({
   };
 
   return (
-    <FormSheet isOpen={isOpen} title="Excluir cliente" onClose={onClose}>
-      <form onSubmit={handleSubmit} className="space-y-1">
-        <p className="mb-3 text-sm leading-5 text-fg-muted">
-          Isso apaga{' '}
-          <span className="font-medium text-fg">{confirmName}</span>
-          {client.kind === 'company'
-            ? `, ${client.courtsCount} quadra${client.courtsCount === 1 ? '' : 's'}, agendas, reservas e pagamentos`
-            : ' e o cadastro em andamento'}
-          . Não tem volta.
-        </p>
+    <Alert
+      open={isOpen}
+      title="Excluir cliente"
+      confirmLabel={submitting ? 'Excluindo…' : 'Excluir definitivamente'}
+      confirmVariant="danger"
+      confirmDisabled={submitting || !canConfirm}
+      dismissLabel="Cancelar"
+      onDismiss={onClose}
+      onConfirm={() => {
+        void handleSubmit();
+      }}
+    >
+      <p>
+        Isso apaga{' '}
+        <span className="font-medium text-fg">{confirmName}</span>
+        {client.kind === 'company'
+          ? `, ${client.courtsCount} quadra${client.courtsCount === 1 ? '' : 's'}, agendas, reservas e pagamentos`
+          : ' e o cadastro em andamento'}
+        . Não tem volta.
+      </p>
+      <div className="mt-4 text-sm">
         <Input
           name="confirmName"
           title={`Digite “${confirmName}” para confirmar`}
@@ -981,22 +1011,20 @@ function DeleteClientSheet({
           autoComplete="off"
           value={typedName}
           onChange={(event) => setTypedName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && canConfirm && !submitting) {
+              event.preventDefault();
+              void handleSubmit();
+            }
+          }}
         />
-        {formError ? (
-          <p className="mb-3 text-sm font-medium text-danger" role="alert">
-            {formError}
-          </p>
-        ) : null}
-        <Button
-          type="submit"
-          variant="danger"
-          fullWidth
-          disabled={submitting || !canConfirm}
-        >
-          {submitting ? 'Excluindo…' : 'Excluir definitivamente'}
-        </Button>
-      </form>
-    </FormSheet>
+      </div>
+      {formError ? (
+        <p className="text-sm font-medium text-danger" role="alert">
+          {formError}
+        </p>
+      ) : null}
+    </Alert>
   );
 }
 
@@ -1023,8 +1051,8 @@ function AccessSheet({
     setSubmitting(false);
   }, [isOpen, mode]);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async () => {
+    if (submitting) return;
     setSubmitting(true);
     setFormError('');
     try {
@@ -1048,40 +1076,35 @@ function AccessSheet({
   };
 
   return (
-    <FormSheet
-      isOpen={isOpen}
-      title={
-        locking
-          ? 'Bloquear acesso por falta de pagamento'
-          : 'Liberar acesso'
+    <Alert
+      open={isOpen}
+      title={locking ? 'Bloquear acesso?' : 'Liberar acesso?'}
+      confirmLabel={
+        submitting
+          ? 'Salvando…'
+          : locking
+            ? 'Bloquear acesso'
+            : 'Liberar acesso'
       }
-      onClose={onClose}
+      confirmVariant={locking ? 'danger' : 'primary'}
+      confirmDisabled={submitting}
+      dismissLabel="Cancelar"
+      onDismiss={onClose}
+      onConfirm={() => {
+        void handleSubmit();
+      }}
     >
-      <form onSubmit={handleSubmit} className="space-y-1">
-        <p className="mb-3 text-sm leading-5 text-fg-muted">
-          {locking
-            ? 'A arena continua vendo a agenda. Reservar, cancelar e alterar horários ficam pausados, e as quadras saem do site. O dono vê um aviso sobre a mensalidade em aberto, com caminho para pagar. Quando o pagamento for confirmado, a escrita volta sozinha.'
-            : 'A arena volta a reservar e alterar horários. As quadras que estavam publicadas reaparecem no site.'}
+      <p>
+        {locking
+          ? 'A arena continua vendo a agenda. Reservar, cancelar e alterar horários ficam pausados, e as quadras saem do site. O dono vê um aviso sobre a mensalidade em aberto, com caminho para pagar. Quando o pagamento for confirmado, a escrita volta sozinha.'
+          : 'A arena volta a reservar e alterar horários. As quadras que estavam publicadas reaparecem no site.'}
+      </p>
+      {formError ? (
+        <p className="mt-3 text-sm font-medium text-danger" role="alert">
+          {formError}
         </p>
-        {formError ? (
-          <p className="mb-3 text-sm font-medium text-danger" role="alert">
-            {formError}
-          </p>
-        ) : null}
-        <Button
-          type="submit"
-          variant={locking ? 'dangerOutline' : 'primary'}
-          fullWidth
-          disabled={submitting}
-        >
-          {submitting
-            ? 'Salvando…'
-            : locking
-              ? 'Bloquear acesso por falta de pagamento'
-              : 'Liberar acesso'}
-        </Button>
-      </form>
-    </FormSheet>
+      ) : null}
+    </Alert>
   );
 }
 

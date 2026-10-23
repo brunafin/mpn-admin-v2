@@ -84,6 +84,7 @@ export type SearchProspectsResult = {
   found: number;
   skipped: number;
   alreadyInPortfolio: number;
+  outsideCity?: number;
   items: GoogleCourtSearchHit[];
 };
 
@@ -172,6 +173,8 @@ export function updateProspect(
     outreachStatus?: OutreachStatus;
     competitor?: CourtCompetitor;
     notes?: string;
+    city?: string;
+    uf?: string;
     markContacted?: boolean;
   },
 ) {
@@ -188,6 +191,12 @@ export function searchProspects(payload: SearchProspectsPayload) {
     .post<SearchProspectsResult>('/google-courts/search', payload, {
       timeout: 90_000,
     })
+    .then((res) => res.data);
+}
+
+export function sanitizeProspects() {
+  return api
+    .post<{ checked: number; updated: number }>('/google-courts/sanitize')
     .then((res) => res.data);
 }
 
