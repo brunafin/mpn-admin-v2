@@ -39,4 +39,11 @@ export function emptyStateActionClassName(extra = "") {
   });
 }
 
+/** Vazio dentro de uma superfície, no lugar de uma frase solta no chão. */
+export function SurfaceEmpty({ children }: { children: string }) {
+  return (
+    <p className="px-4 py-8 text-center text-sm text-fg-muted">{children}</p>
+  );
+}
+
 export default EmptyState;

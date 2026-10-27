@@ -10,6 +10,7 @@ import Button from '../components/Button';
 import { Card } from '../components/Card';
 import { fieldOutlineBase } from '../components/Input';
 import { PageHeader } from '../components/PageTitle';
+import { SettingsFormSkeleton } from '../components/Skeleton';
 import Switch from '../components/Switch';
 import { formatDateTime } from '../utils/format';
 
@@ -69,9 +70,7 @@ export default function MaintenancePage() {
         <PageHeader title="Manutenção" />
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
-          {loading ? (
-            <p className="text-sm text-fg-muted">Carregando…</p>
-          ) : null}
+          {loading ? <SettingsFormSkeleton /> : null}
 
           {error ? (
             <p className="mb-3 text-sm font-medium text-danger" role="alert">
@@ -135,7 +134,7 @@ export default function MaintenancePage() {
               <div className="mt-4">
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
                   disabled={!messageDirty || saving != null}
                   onClick={() => {

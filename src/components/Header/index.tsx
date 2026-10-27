@@ -1,10 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { BsList, BsX } from 'react-icons/bs';
-import { MdOutlineLogout } from 'react-icons/md';
+import { MdClose, MdMenu, MdOutlineLogout, MdOutlinePerson } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
 import { ADMIN_LOGO_URL } from '../../constants/brand';
-import { ADMIN_NAV, SELLER_NAV } from '../../constants/nav';
-import { logoutAndRedirect } from '../../utils/authCookie';
+import { ADMIN_NAV, SELLER_NAV, navItemClass } from '../../constants/nav';
+import {
+  getAccessTokenPayload,
+  logoutAndRedirect,
+  type AdminTokenPayload,
+} from '../../utils/authCookie';
 import { isRepresentativeToken } from '../ProtectedRoute';
 
 function Header() {
@@ -13,6 +16,9 @@ function Header() {
   const titleId = useId();
   const location = useLocation();
   const nav = isRepresentativeToken() ? SELLER_NAV : ADMIN_NAV;
+  const username =
+    getAccessTokenPayload<AdminTokenPayload>()?.username?.trim() || '';
+  const profileActive = location.pathname === '/perfil';
 
   useEffect(() => {
     setMenuOpen(false);
@@ -45,13 +51,16 @@ function Header() {
       <Link
         to="/inicio"
         aria-label="MPN Admin — início"
-        className="flex size-11 shrink-0 items-center justify-center"
+        className="flex min-w-0 items-center gap-2"
       >
         <img
           src={ADMIN_LOGO_URL}
           alt=""
-          className="size-8 object-contain"
+          className="size-8 shrink-0 object-contain"
         />
+        <span className="truncate text-sm font-semibold tracking-tight text-fg">
+          MPN Admin
+        </span>
       </Link>
 
       <button
@@ -62,7 +71,7 @@ function Header() {
         onClick={() => setMenuOpen(true)}
         className="mpn-tap flex size-11 shrink-0 items-center justify-center rounded-md text-fg transition hover:bg-arena-hover"
       >
-        <BsList size={20} aria-hidden />
+        <MdMenu size={22} aria-hidden />
       </button>
 
       {menuOpen && (
@@ -84,12 +93,15 @@ function Header() {
             className="relative z-10 flex h-full w-[min(100%,18rem)] flex-col bg-surface text-fg shadow-[-8px_0_24px_rgb(0_0_0/0.08)]"
           >
             <div className="flex items-center justify-between gap-3 px-4 py-3">
-              <div className="flex size-8 shrink-0 items-center justify-center">
+              <div className="flex min-w-0 items-center gap-2">
                 <img
                   src={ADMIN_LOGO_URL}
                   alt=""
-                  className="size-full object-contain"
+                  className="size-8 shrink-0 object-contain"
                 />
+                <span className="truncate text-sm font-semibold tracking-tight text-fg">
+                  MPN Admin
+                </span>
               </div>
               <h2 id={titleId} className="sr-only">
                 Menu da plataforma
@@ -101,7 +113,7 @@ function Header() {
                 aria-label="Fechar"
                 className="mpn-tap flex size-11 shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-arena-hover hover:text-fg"
               >
-                <BsX size={20} aria-hidden />
+                <MdClose size={22} aria-hidden />
               </button>
             </div>
 
@@ -124,18 +136,14 @@ function Header() {
                       <Link
                         to={to}
                         aria-current={isActive ? 'page' : undefined}
-                        className={`flex min-h-11 items-center gap-3 rounded-md px-2.5 py-2 transition ${
-                          isActive
-                            ? 'bg-accent-soft text-fg'
-                            : 'text-fg-muted hover:bg-arena-hover hover:text-fg'
-                        }`}
+                        className={`flex min-h-11 items-center gap-3 rounded-md px-2.5 py-2 transition ${navItemClass(isActive)}`}
                       >
                         <Icon size={18} className="shrink-0" aria-hidden />
                         <span className="min-w-0">
-                          <span className="block text-sm font-medium text-fg">
+                          <span className="block text-sm font-medium">
                             {label}
                           </span>
-                          <span className="block truncate text-xs text-fg-muted">
+                          <span className="block truncate text-xs opacity-80">
                             {description}
                           </span>
                         </span>
@@ -146,10 +154,18 @@ function Header() {
               </ul>
             </nav>
 
-            <div className="p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div className="flex flex-col gap-0.5 p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              <Link
+                to="/perfil"
+                aria-current={profileActive ? 'page' : undefined}
+                className={`flex min-h-11 items-center gap-3 rounded-md px-2.5 text-sm font-medium transition ${navItemClass(profileActive)}`}
+              >
+                <MdOutlinePerson size={18} className="shrink-0" aria-hidden />
+                <span className="truncate">{username || 'Perfil'}</span>
+              </Link>
               <button
                 type="button"
-                className="flex h-10 w-full items-center justify-center gap-2 rounded-md px-3 text-sm text-fg-muted transition hover:bg-arena-hover hover:text-fg"
+                className={`flex h-10 w-full items-center gap-3 rounded-md px-2.5 text-sm transition ${navItemClass(false)}`}
                 onClick={() => {
                   void logoutAndRedirect();
                 }}

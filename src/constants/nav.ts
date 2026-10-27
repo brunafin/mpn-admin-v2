@@ -3,6 +3,7 @@ import {
   MdOutlineDashboard,
   MdOutlineHandshake,
   MdOutlinePayments,
+  MdOutlineTimer,
   MdOutlinePeopleAlt,
   MdOutlinePercent,
   MdOutlineReceiptLong,
@@ -49,6 +50,13 @@ export const ADMIN_NAV = [
     match: (path: string) => path === '/planos' || path.startsWith('/planos/'),
   },
   {
+    to: '/inadimplencia',
+    label: 'Inadimplência',
+    description: 'Dias até o bloqueio',
+    Icon: MdOutlineTimer,
+    match: (path: string) => path === '/inadimplencia',
+  },
+  {
     to: '/custos',
     label: 'Custos',
     description: 'Gastos da plataforma',
@@ -64,6 +72,13 @@ export const ADMIN_NAV = [
     separated: true,
   },
 ] as const;
+
+/** Item ativo em pílula escura. O wash teal fica para filtro, não para “você está aqui”. */
+export function navItemClass(active: boolean) {
+  return active
+    ? 'bg-fg font-semibold text-canvas'
+    : 'text-fg-muted hover:bg-arena-hover hover:text-fg';
+}
 
 export const SELLER_NAV = [
   {

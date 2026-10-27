@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import axios from 'axios';
-import { MdAdd, MdOutlineChevronRight } from 'react-icons/md';
+import { MdAdd } from 'react-icons/md';
 import {
   createCost,
   deleteCost,
@@ -12,13 +12,14 @@ import {
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
 import Alert from '../components/Alert';
 import Button from '../components/Button';
-import { cardClassName } from '../components/Card';
+import { metricTileClass } from '../components/Card';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
 import { PageHeader } from '../components/PageTitle';
 import Select from '../components/Select';
-import { PlansListSkeleton } from '../components/Skeleton';
+import { ClientsListSkeleton } from '../components/Skeleton';
+import Table, { TableCell, TableRow } from '../components/Table';
 import { formatCurrencyBRL } from '../utils/formatCurrency';
 
 const RECURRENCE_OPTIONS = [
@@ -83,9 +84,7 @@ export default function CostsPage() {
         />
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
-          {loading && costs.length === 0 ? (
-            <PlansListSkeleton isolated />
-          ) : null}
+          {loading && costs.length === 0 ? <ClientsListSkeleton /> : null}
 
           {error ? (
             <p className="mb-3 text-sm font-medium text-danger" role="alert">
@@ -111,41 +110,49 @@ export default function CostsPage() {
 
           {costs.length > 0 ? (
             <>
-              <p className="mb-3 text-sm text-fg-muted">
-                Recorrente /mês{' '}
-                <span className="font-medium tabular-nums text-fg">
+              <div className={`${metricTileClass} mb-3 max-w-xs`}>
+                <p className="text-xs font-medium text-fg-muted">Recorrente /mês</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-fg">
                   {formatCurrencyBRL(monthlyTotal)}
-                </span>
-              </p>
-              <ul
-                className={`space-y-3 transition-opacity ${
-                  loading ? 'opacity-60' : ''
-                }`}
-                aria-busy={loading}
+                </p>
+              </div>
+              <Table
+                columns={['Descrição', 'Recorrência', 'Valor', 'No mês']}
+                gridClass="lg:grid-cols-[minmax(0,1.6fr)_7rem_8rem_8rem]"
+                className={loading ? 'opacity-60' : ''}
               >
                 {costs.map((cost) => (
-                  <li key={cost.id}>
-                    <button
-                      type="button"
-                      onClick={() => setEditing(cost)}
-                      aria-label={`Editar custo ${cost.description}, ${formatCurrencyBRL(Number(cost.amount))}`}
-                      className={`mpn-tap flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-arena-hover! ${cardClassName}`}
-                    >
-                      <p className="min-w-0 flex-1 truncate text-base font-semibold text-fg">
+                  <TableRow
+                    key={cost.id}
+                    gridClass="lg:grid-cols-[minmax(0,1.6fr)_7rem_8rem_8rem]"
+                    label={`Editar custo ${cost.description}`}
+                    onClick={() => setEditing(cost)}
+                  >
+                    <TableCell>
+                      <span className="block truncate text-sm font-medium text-fg">
                         {cost.description}
-                      </p>
-                      <p className="shrink-0 text-base font-medium tabular-nums text-fg">
+                      </span>
+                    </TableCell>
+                    <TableCell label="Recorrência">
+                      <span className="block text-sm text-fg">
+                        {RECURRENCE_OPTIONS.find(
+                          (option) => option.id === cost.recurrence,
+                        )?.name || cost.recurrence}
+                      </span>
+                    </TableCell>
+                    <TableCell label="Valor">
+                      <span className="block text-sm tabular-nums text-fg">
                         {formatCurrencyBRL(Number(cost.amount))}
-                      </p>
-                      <MdOutlineChevronRight
-                        size={18}
-                        className="shrink-0 text-fg-muted"
-                        aria-hidden
-                      />
-                    </button>
-                  </li>
+                      </span>
+                    </TableCell>
+                    <TableCell label="No mês">
+                      <span className="block text-sm tabular-nums text-fg-muted">
+                        {formatCurrencyBRL(Number(cost.monthlyEquivalent))}
+                      </span>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </ul>
+              </Table>
             </>
           ) : null}
         </div>

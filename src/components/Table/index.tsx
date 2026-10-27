@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { surfaceShadowClass } from '../Card';
 
 type TableProps = {
@@ -9,7 +10,7 @@ type TableProps = {
   className?: string;
 };
 
-/** Tabela do admin. O cartão e a sombra separam; as linhas não têm contorno. */
+/** Tabela do admin. Uma superfície; as linhas não têm cartão próprio. */
 export default function Table({
   columns,
   gridClass,
@@ -21,7 +22,7 @@ export default function Table({
       className={`overflow-hidden rounded-lg bg-surface ${surfaceShadowClass} ${className}`.trim()}
     >
       <div
-        className={`hidden px-4 py-2 text-xs font-medium text-fg-muted lg:grid lg:gap-3 ${gridClass}`}
+        className={`hidden px-4 py-2 text-xs font-medium text-fg-muted lg:grid lg:items-center lg:gap-3 ${gridClass}`}
       >
         {columns.map((column) => (
           <span key={column}>{column}</span>
@@ -32,20 +33,67 @@ export default function Table({
   );
 }
 
+const rowGrid =
+  'grid w-full grid-cols-1 gap-1 px-4 py-3 text-left transition hover:bg-arena-hover lg:items-center lg:gap-3';
+
 export function TableRow({
   gridClass,
   children,
+  to,
+  onClick,
+  label,
 }: {
   gridClass: string;
   children: ReactNode;
+  to?: string;
+  onClick?: () => void;
+  label?: string;
 }) {
+  const className = `${rowGrid} ${gridClass}`;
+
+  if (to) {
+    return (
+      <li>
+        <Link to={to} className={className} aria-label={label}>
+          {children}
+        </Link>
+      </li>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <li>
+        <button type="button" onClick={onClick} className={className} aria-label={label}>
+          {children}
+        </button>
+      </li>
+    );
+  }
+
   return (
     <li>
-      <div
-        className={`grid grid-cols-1 gap-1 px-4 py-3 hover:bg-arena-hover lg:items-center lg:gap-3 ${gridClass}`}
-      >
-        {children}
-      </div>
+      <div className={className}>{children}</div>
     </li>
+  );
+}
+
+/** Célula. No celular o rótulo aparece; no desktop ele fica só para o leitor de tela. */
+export function TableCell({
+  label,
+  children,
+  className = '',
+}: {
+  label?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`min-w-0 ${className}`.trim()}>
+      {label ? (
+        <p className="text-xs text-fg-muted lg:sr-only">{label}</p>
+      ) : null}
+      {children}
+    </div>
   );
 }

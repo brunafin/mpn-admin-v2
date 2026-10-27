@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   getDashboard,
@@ -7,11 +7,11 @@ import {
 } from '../api/dashboard';
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
 import { buttonClassName } from '../components/Button';
-import { CardLabel, cardClassName, surfaceShadowClass } from '../components/Card';
-import { badgeToneClass } from '../components/Badge';
-import { directoryListClassName, listClassName } from '../components/ListRow';
+import { CardLabel, metricTileClass, surfaceShadowClass } from '../components/Card';
+import { SurfaceEmpty } from '../components/EmptyState';
+import { listClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
-import { formatCurrency, formatMinutesAgo } from '../utils/format';
+import { formatCurrency, formatDate, formatMinutesAgo } from '../utils/format';
 import {
   paymentReminderMessage,
   whatsappUrlWithText,
@@ -88,11 +88,17 @@ function AdminHomePage() {
     };
   }, []);
 
-  const metrics = [
-    { label: 'Clientes', value: stats.arenas, tone: badgeToneClass.neutral },
-    { label: 'Ativos', value: stats.activeArenas, tone: badgeToneClass.accent },
-    { label: 'Trial', value: stats.trialArenas, tone: badgeToneClass.ink },
-    { label: 'Expirados', value: stats.expiredArenas, tone: badgeToneClass.danger },
+  const clientMetrics = [
+    { label: 'Clientes', value: String(stats.arenas) },
+    { label: 'Ativos', value: String(stats.activeArenas) },
+    { label: 'Trial', value: String(stats.trialArenas) },
+    { label: 'Expirados', value: String(stats.expiredArenas) },
+  ];
+  const operationMetrics = [
+    { label: 'Receita do mês', value: formatCurrency(stats.monthlyRevenue) },
+    { label: 'Recebido no mês', value: formatCurrency(stats.receivedThisMonth) },
+    { label: 'Reservas hoje', value: String(stats.reservationsToday) },
+    { label: 'Reservas em 7 dias', value: String(stats.reservationsLast7Days) },
   ];
 
   return (
@@ -115,25 +121,27 @@ function AdminHomePage() {
                 <CardLabel id="resumo-heading" as="h2">
                   Clientes
                 </CardLabel>
-                <MetricGrid items={metrics} className="mt-2" />
+                <MetricGrid items={clientMetrics} className="mt-2" />
+              </section>
+
+              <section aria-labelledby="operacao-heading">
+                <CardLabel id="operacao-heading" as="h2">
+                  Operação
+                </CardLabel>
+                <MetricGrid items={operationMetrics} className="mt-2" />
               </section>
 
               <OverdueClientsSection clients={stats.overdueClients ?? []} />
+              <TrialsEndingSection trials={stats.trialsEndingSoon ?? []} />
 
-              <section aria-labelledby="online-heading">
-                <div className="mb-2 flex items-baseline justify-between gap-3">
-                  <CardLabel id="online-heading">
-                    Acesso na última hora
-                  </CardLabel>
-                  {stats.lastHourLogins?.length ? (
-                    <p className="text-sm tabular-nums text-fg-muted">
-                      {stats.lastHourLogins.length}
-                    </p>
-                  ) : null}
-                </div>
-                {stats.lastHourLogins?.length ? (
-                  <ul className={listClassName}>
-                    {stats.lastHourLogins.map((item) => (
+              <Panel
+                id="online-heading"
+                title="Acesso na última hora"
+                count={stats.lastHourLogins?.length ?? 0}
+                empty="Ninguém acessou na última hora."
+              >
+                {stats.lastHourLogins?.length
+                  ? stats.lastHourLogins.map((item) => (
                       <li key={`${item.publicId}-${item.lastLoginAt}`}>
                         <Link
                           to={`/clientes/${item.publicId}`}
@@ -157,14 +165,9 @@ function AdminHomePage() {
                           </span>
                         </Link>
                       </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-fg-muted">
-                    Ninguém acessou na última hora.
-                  </p>
-                )}
-              </section>
+                    ))
+                  : null}
+              </Panel>
             </div>
           )}
         </div>
@@ -190,70 +193,134 @@ function OverdueClientsSection({
   clients: DashboardOverdueClient[];
 }) {
   return (
-    <section aria-labelledby="atraso-heading">
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <CardLabel id="atraso-heading" as="h2">
-          Em atraso
-        </CardLabel>
-        {clients.length ? (
-          <p className="text-sm tabular-nums text-fg-muted">{clients.length}</p>
-        ) : null}
-      </div>
-      {clients.length ? (
-        <ul className={directoryListClassName}>
-          {clients.map((item) => {
-            const reminder = whatsappUrlWithText(
-              item.phone,
-              paymentReminderMessage({
-                ownerName: item.ownerName,
-                arenaName: item.name,
-                amountLabel: formatCurrency(item.amount),
-                dueDate: item.oldestDueDate,
-                overdueCount: item.overdueCount,
-              }),
-            );
-            return (
-              <li
-                key={item.publicId}
-                className={`flex items-center gap-3 px-4 py-3 ${cardClassName}`}
-              >
-                <Link
-                  to={`/clientes/${item.publicId}`}
-                  className="mpn-tap min-w-0 flex-1 rounded-md hover:bg-arena-hover"
+    <>
+      <Panel
+        id="atraso-heading"
+        title="Em atraso"
+        count={clients.length}
+        empty="Nenhum cliente em atraso."
+      >
+        {clients.length
+          ? clients.map((item) => {
+              const reminder = whatsappUrlWithText(
+                item.phone,
+                paymentReminderMessage({
+                  ownerName: item.ownerName,
+                  arenaName: item.name,
+                  amountLabel: formatCurrency(item.amount),
+                  dueDate: item.oldestDueDate,
+                  overdueCount: item.overdueCount,
+                }),
+              );
+              return (
+                <li
+                  key={item.publicId}
+                  className="flex items-center gap-3 px-4 py-3"
                 >
+                  <Link
+                    to={`/clientes/${item.publicId}`}
+                    className="mpn-tap min-w-0 flex-1 rounded-md hover:bg-arena-hover"
+                  >
+                    <span className="block truncate text-sm font-medium text-fg">
+                      {item.name}
+                    </span>
+                    <span className="mt-0.5 block truncate text-sm text-fg-muted">
+                      {overdueSubtitle(item)}
+                    </span>
+                  </Link>
+                  {reminder ? (
+                    <a
+                      href={reminder}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Lembrar ${item.name} do pagamento no WhatsApp`}
+                      className={buttonClassName({
+                        variant: 'primary',
+                        size: 'sm',
+                        className: 'shrink-0',
+                      })}
+                    >
+                      WhatsApp
+                    </a>
+                  ) : (
+                    <span className="shrink-0 text-xs text-fg-muted">
+                      Sem telefone
+                    </span>
+                  )}
+                </li>
+              );
+            })
+          : null}
+      </Panel>
+    </>
+  );
+}
+
+function TrialsEndingSection({
+  trials,
+}: {
+  trials: PlatformDashboard['trialsEndingSoon'];
+}) {
+  return (
+    <Panel
+      id="trial-heading"
+      title="Trial acabando"
+      count={trials.length}
+      empty="Nenhum trial perto do fim."
+    >
+      {trials.length
+        ? trials.map((item) => (
+            <li key={item.publicId}>
+              <Link
+                to={`/clientes/${item.publicId}`}
+                className="mpn-tap flex min-h-11 items-center justify-between gap-3 px-4 py-3 hover:bg-arena-hover"
+              >
+                <span className="min-w-0">
                   <span className="block truncate text-sm font-medium text-fg">
                     {item.name}
                   </span>
-                  <span className="mt-0.5 block truncate text-sm text-fg-muted">
-                    {overdueSubtitle(item)}
+                  <span className="mt-0.5 block text-sm text-fg-muted">
+                    {item.courtsCount}{' '}
+                    {item.courtsCount === 1 ? 'quadra' : 'quadras'}
                   </span>
-                </Link>
-                {reminder ? (
-                  <a
-                    href={reminder}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`Lembrar ${item.name} do pagamento no WhatsApp`}
-                    className={buttonClassName({
-                      variant: 'primary',
-                      size: 'sm',
-                      className: 'shrink-0',
-                    })}
-                  >
-                    WhatsApp
-                  </a>
-                ) : (
-                  <span className="shrink-0 text-xs text-fg-muted">
-                    Sem telefone
-                  </span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p className="text-sm text-fg-muted">Nenhum cliente em atraso.</p>
-      )}
+                </span>
+                <span className="shrink-0 text-sm tabular-nums text-fg-muted">
+                  {formatDate(item.trialEndsAt)}
+                </span>
+              </Link>
+            </li>
+          ))
+        : null}
+    </Panel>
+  );
+}
+
+function Panel({
+  id,
+  title,
+  count,
+  empty,
+  children,
+}: {
+  id: string;
+  title: string;
+  count?: number;
+  empty: string;
+  children: ReactNode;
+}) {
+  return (
+    <section aria-labelledby={id}>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <CardLabel id={id} as="h2">
+          {title}
+        </CardLabel>
+        {count ? (
+          <p className="text-sm tabular-nums text-fg-muted">{count}</p>
+        ) : null}
+      </div>
+      <div className={listClassName}>
+        {children ? <ul>{children}</ul> : <SurfaceEmpty>{empty}</SurfaceEmpty>}
+      </div>
     </section>
   );
 }
@@ -262,20 +329,17 @@ function MetricGrid({
   items,
   className = '',
 }: {
-  items: { label: string; value: number; tone: string }[];
+  items: { label: string; value: string }[];
   className?: string;
 }) {
   return (
     <div
-      className={`grid grid-cols-2 gap-2 sm:grid-cols-4 ${className}`.trim()}
+      className={`grid grid-cols-2 gap-2 lg:grid-cols-4 ${className}`.trim()}
     >
       {items.map((item) => (
-        <div
-          key={item.label}
-          className={`rounded-lg px-4 py-3 ${surfaceShadowClass} ${item.tone}`}
-        >
-          <p className="text-xs font-medium">{item.label}</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
+        <div key={item.label} className={metricTileClass}>
+          <p className="text-xs font-medium text-fg-muted">{item.label}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-fg">
             {item.value}
           </p>
         </div>

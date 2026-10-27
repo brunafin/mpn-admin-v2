@@ -17,6 +17,7 @@ import CommissionsPage from './pages/Commissions';
 import ProfilePage from './pages/Profile';
 import DesignSystemPage from './pages/DesignSystem';
 import MaintenancePage from './pages/Maintenance';
+import DelinquencyPage from './pages/Delinquency';
 
 function RedirectLegacyQuadraDetail() {
   const { companyPublicId } = useParams<{ companyPublicId: string }>();
@@ -42,6 +43,7 @@ export default function App() {
             element={<ProspectDetailPage />}
           />
           <Route path="/planos" element={<PlansPage />} />
+          <Route path="/inadimplencia" element={<DelinquencyPage />} />
           <Route path="/custos" element={<CostsPage />} />
           <Route path="/manutencao" element={<MaintenancePage />} />
           <Route path="/design-system/*" element={<DesignSystemPage />} />

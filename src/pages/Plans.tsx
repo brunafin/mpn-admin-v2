@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import axios from 'axios';
-import { MdAdd, MdOutlineChevronRight } from 'react-icons/md';
+import { MdAdd } from 'react-icons/md';
 import {
   createPlan,
   deletePlan,
@@ -11,12 +11,12 @@ import {
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
 import Alert from '../components/Alert';
 import Button from '../components/Button';
-import { cardClassName } from '../components/Card';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
 import { PageHeader } from '../components/PageTitle';
-import { PlansListSkeleton } from '../components/Skeleton';
+import { ClientsListSkeleton } from '../components/Skeleton';
+import Table, { TableCell, TableRow } from '../components/Table';
 import { formatCurrencyBRL } from '../utils/formatCurrency';
 
 export default function PlansPage() {
@@ -69,9 +69,7 @@ export default function PlansPage() {
         />
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
-          {loading && plans.length === 0 ? (
-            <PlansListSkeleton isolated />
-          ) : null}
+          {loading && plans.length === 0 ? <ClientsListSkeleton /> : null}
 
           {error ? (
             <p className="mb-3 text-sm font-medium text-danger" role="alert">
@@ -96,35 +94,41 @@ export default function PlansPage() {
           ) : null}
 
           {plans.length > 0 ? (
-            <ul
-              className={`space-y-3 transition-opacity ${
-                loading ? 'opacity-60' : ''
-              }`}
-              aria-busy={loading}
+            <Table
+              columns={['Plano', 'Base', 'Por quadra']}
+              gridClass="lg:grid-cols-[minmax(0,1.6fr)_8rem_8rem]"
+              className={loading ? 'opacity-60' : ''}
             >
               {plans.map((plan) => (
-                <li key={plan.id}>
-                  <button
-                    type="button"
-                    onClick={() => setEditing(plan)}
-                    aria-label={`Editar plano ${plan.name}, ${formatCurrencyBRL(Number(plan.basePrice))}`}
-                    className={`mpn-tap flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-arena-hover! ${cardClassName}`}
-                  >
-                    <p className="min-w-0 flex-1 truncate text-base font-semibold text-fg">
+                <TableRow
+                  key={plan.id}
+                  gridClass="lg:grid-cols-[minmax(0,1.6fr)_8rem_8rem]"
+                  label={`Editar plano ${plan.name}`}
+                  onClick={() => setEditing(plan)}
+                >
+                  <TableCell>
+                    <span className="block truncate text-sm font-medium text-fg">
                       {plan.name}
-                    </p>
-                    <p className="shrink-0 text-base font-medium tabular-nums text-fg">
+                    </span>
+                    {plan.description ? (
+                      <span className="mt-0.5 block truncate text-xs text-fg-muted">
+                        {plan.description}
+                      </span>
+                    ) : null}
+                  </TableCell>
+                  <TableCell label="Base">
+                    <span className="block text-sm tabular-nums text-fg">
                       {formatCurrencyBRL(Number(plan.basePrice))}
-                    </p>
-                    <MdOutlineChevronRight
-                      size={18}
-                      className="shrink-0 text-fg-muted"
-                      aria-hidden
-                    />
-                  </button>
-                </li>
+                    </span>
+                  </TableCell>
+                  <TableCell label="Por quadra">
+                    <span className="block text-sm tabular-nums text-fg">
+                      {formatCurrencyBRL(Number(plan.pricePerCourt))}
+                    </span>
+                  </TableCell>
+                </TableRow>
               ))}
-            </ul>
+            </Table>
           ) : null}
         </div>
       </section>

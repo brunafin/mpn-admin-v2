@@ -11,7 +11,7 @@ import {
   type GoogleCourtProspect,
   type OutreachStatus,
 } from '../api/prospects';
-import AppLayout, { BACK_BAR, PAGE_SHELL } from '../components/AppLayout';
+import AppLayout, { BACK_BAR, BACK_TITLE, PAGE_SHELL } from '../components/AppLayout';
 import { OutreachBadge } from '../components/Badge';
 import Button, { buttonClassName } from '../components/Button';
 import { CardLabel } from '../components/Card';
@@ -143,9 +143,8 @@ export default function ProspectDetailPage() {
           >
             <MdArrowBack size={20} aria-hidden />
           </Link>
-          <h1 className="min-w-0 truncate text-sm font-medium text-fg">
-            {prospect?.name || 'Prospecto'}
-          </h1>
+          <h1 className={BACK_TITLE}>{prospect?.name || 'Prospecto'}</h1>
+          {prospect ? <OutreachBadge status={prospect.outreachStatus} /> : null}
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 lg:px-8">
@@ -159,17 +158,9 @@ export default function ProspectDetailPage() {
 
           {prospect ? (
             <>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-base font-semibold text-fg">
-                      {prospect.name}
-                    </p>
-                    <p className="mt-1 text-sm text-fg-muted">
-                      {[prospect.city, prospect.uf].filter(Boolean).join('/')}
-                    </p>
-                  </div>
-                  <OutreachBadge status={prospect.outreachStatus} />
-                </div>
+                <p className="text-sm text-fg-muted">
+                  {[prospect.city, prospect.uf].filter(Boolean).join('/') || '—'}
+                </p>
                 {prospect.fullAddress ? (
                   <p className="mt-3 text-sm text-fg-muted">
                     {prospect.fullAddress}
@@ -191,7 +182,11 @@ export default function ProspectDetailPage() {
                     Já é cliente.{' '}
                     <Link
                       to={`/clientes/${prospect.matchedCompanyPublicId}`}
-                      className="underline-offset-2 hover:underline"
+                      className={buttonClassName({
+                        variant: 'ghost',
+                        size: 'sm',
+                        className: 'h-8 px-2',
+                      })}
                     >
                       Abrir cadastro
                     </Link>
@@ -262,20 +257,24 @@ export default function ProspectDetailPage() {
                     onChange={(event) => setUf(event.target.value)}
                   />
                   {addressCity && addressDiffers ? (
-                    <p className="mb-3 text-sm text-fg-muted">
-                      O endereço indica {addressCity.city}
-                      {addressCity.uf ? `/${addressCity.uf}` : ''}.{' '}
-                      <button
+                    <>
+                      <p className="mb-1 text-sm text-fg-muted">
+                        O endereço indica {addressCity.city}
+                        {addressCity.uf ? `/${addressCity.uf}` : ''}.
+                      </p>
+                      <Button
                         type="button"
-                        className="font-medium text-fg underline-offset-2 hover:underline"
+                        variant="ghost"
+                        size="sm"
+                        className="mb-3 h-8 px-2"
                         onClick={() => {
                           if (addressCity.city) setCity(addressCity.city);
                           if (addressCity.uf) setUf(addressCity.uf);
                         }}
                       >
                         Usar essa cidade
-                      </button>
-                    </p>
+                      </Button>
+                    </>
                   ) : null}
                   <Select
                     name="outreachStatus"

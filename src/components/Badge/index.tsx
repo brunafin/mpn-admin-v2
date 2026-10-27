@@ -7,12 +7,12 @@ import { OUTREACH_LABEL } from '../../api/prospects';
 export type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger' | 'accent' | 'ink';
 
 export const badgeToneClass: Record<BadgeTone, string> = {
-  neutral: 'bg-[#e6e8ec] text-fg',
+  neutral: 'bg-chip text-fg',
   success: 'bg-success-soft text-success',
   warning: 'bg-warning-soft text-warning',
   danger: 'bg-danger-soft text-danger-ink',
   accent: 'bg-accent-badge text-on-accent-badge',
-  ink: 'bg-[#2c2c2c] text-[#f7f8fa]',
+  ink: 'bg-fg text-canvas',
 };
 
 type BadgeProps = {
@@ -24,7 +24,7 @@ type BadgeProps = {
 export function Badge({ children, tone = 'neutral', className = '' }: BadgeProps) {
   return (
     <span
-      className={`inline-flex w-fit max-w-full shrink-0 items-center rounded-md px-3 py-1.5 text-xs font-medium leading-normal ${badgeToneClass[tone]} ${className}`.trim()}
+      className={`inline-flex w-fit max-w-full shrink-0 items-center rounded-md px-2 py-0.5 text-xs font-medium leading-normal ${badgeToneClass[tone]} ${className}`.trim()}
     >
       {children}
     </span>

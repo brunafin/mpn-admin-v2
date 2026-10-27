@@ -20,6 +20,8 @@ interface ISelectProps {
   className?: string;
   disabled?: boolean;
   placeholder?: string;
+  /** Sem a opção vazia. A lista já traz o valor inicial, inclusive “todos”. */
+  omitPlaceholder?: boolean;
   error?: string;
 }
 
@@ -37,6 +39,7 @@ function Select({
   className,
   disabled = false,
   placeholder = "Selecione...",
+  omitPlaceholder = false,
   error,
 }: ISelectProps) {
   const hintUid = useId();
@@ -73,12 +76,14 @@ function Select({
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
           className={`${fieldOutlineClass} w-full appearance-none pr-10 ${
-            !hasValue ? "text-fg-muted" : ""
+            !omitPlaceholder && !hasValue ? "text-fg-muted" : ""
           }`}
         >
-          <option value="" disabled={required}>
-            {placeholder}
-          </option>
+          {omitPlaceholder ? null : (
+            <option value="" disabled={required}>
+              {placeholder}
+            </option>
+          )}
           {options.map((opt) => (
             <option key={String(opt.id)} value={String(opt.id)}>
               {opt.name}

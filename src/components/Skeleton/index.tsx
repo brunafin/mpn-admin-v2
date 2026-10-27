@@ -18,39 +18,43 @@ export function SkeletonBone({ className = '' }: SkeletonBoneProps) {
 type ClientsListSkeletonProps = {
   count?: number;
   className?: string;
-  /** Cada linha é um cartão, como a lista de clientes. */
-  separated?: boolean;
 };
 
 export function ClientsListSkeleton({
   count = 6,
   className = '',
-  separated = false,
 }: ClientsListSkeletonProps) {
   return (
     <ul
-      className={`${separated ? 'space-y-3' : listClassName} ${className}`}
-      aria-label="Carregando clientes"
+      className={`${listClassName} ${className}`}
+      aria-label="Carregando lista"
       aria-busy="true"
     >
       {Array.from({ length: count }).map((_, index) => (
-        <li
-          key={index}
-          className={`flex items-center gap-3 px-4 py-3 ${
-            separated ? cardClassName : ''
-          }`}
-        >
-          <div className="min-w-0 flex-1 animate-pulse space-y-2">
-            <div className="flex items-center gap-2">
-              <SkeletonBone className="h-4 w-2/3 max-w-[12rem]" />
-              <SkeletonBone className="h-4 w-12 shrink-0" />
-            </div>
-            <SkeletonBone className="h-3.5 w-1/2 max-w-[10rem]" />
-            <SkeletonBone className="h-3 w-3/4 max-w-[14rem]" />
+        <li key={index} className="flex items-center gap-4 px-4 py-3">
+          <div className="min-w-0 flex-1 animate-pulse">
+            <SkeletonBone className="h-4 w-1/3 max-w-[14rem]" />
           </div>
+          <SkeletonBone className="hidden h-4 w-24 shrink-0 animate-pulse lg:block" />
+          <SkeletonBone className="hidden h-4 w-16 shrink-0 animate-pulse lg:block" />
         </li>
       ))}
     </ul>
+  );
+}
+
+export function SettingsFormSkeleton({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`max-w-xl animate-pulse space-y-3 px-4 py-4 ${cardClassName} ${className}`}
+      aria-label="Carregando"
+      aria-busy="true"
+    >
+      <SkeletonBone className="h-4 w-2/3" />
+      <SkeletonBone className="h-3.5 w-full" />
+      <SkeletonBone className="h-3.5 w-4/5" />
+      <SkeletonBone className="mt-4 h-10 w-28" />
+    </div>
   );
 }
 

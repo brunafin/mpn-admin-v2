@@ -42,7 +42,7 @@ export default function Switch({
         />
         <span
           aria-hidden="true"
-          className="relative h-6 w-11 shrink-0 rounded-full bg-[#e6e8ec] transition peer-checked:bg-accent-badge peer-checked:[&>span]:translate-x-5 peer-checked:[&>span]:bg-surface peer-disabled:opacity-50"
+          className="relative h-6 w-11 shrink-0 rounded-full bg-chip transition peer-checked:bg-accent-badge peer-checked:[&>span]:translate-x-5 peer-checked:[&>span]:bg-surface peer-disabled:opacity-50"
         >
           <span className="absolute top-0.5 left-0.5 size-4 rounded-full bg-surface shadow-[0_1px_2px_rgb(0_0_0/0.16)] transition" />
         </span>

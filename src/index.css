@@ -28,6 +28,8 @@
   --color-arena-soft: #e8eef6;
   /* Hover do mesmo cinza azulado, mais claro para não pesar. */
   --color-arena-hover: #fafcfe;
+  /* Chip neutro, trilha do switch e caixa do checkbox. */
+  --color-chip: #e6e8ec;
   /* Foco do campo: contorno escuro. O teal claro some no branco. */
   --color-focus: #2c2c2c;
 
@@ -218,11 +220,22 @@ input[type="checkbox"] {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #d4d4d4;
+  background-color: color-mix(in srgb, var(--color-fg) 22%, var(--color-canvas));
   border-radius: 6px;
   border: 2px solid var(--color-canvas);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #a3a3a3;
+  background-color: color-mix(in srgb, var(--color-fg) 40%, var(--color-canvas));
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }

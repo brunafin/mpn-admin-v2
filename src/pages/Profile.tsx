@@ -259,7 +259,7 @@ export default function ProfilePage() {
                     Perfil salvo.
                   </p>
                 ) : null}
-                <Button type="submit" fullWidth disabled={submitting}>
+                <Button type="submit" disabled={submitting}>
                   {submitting ? 'Salvando…' : 'Salvar'}
                 </Button>
               </form>

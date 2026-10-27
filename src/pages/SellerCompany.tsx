@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { MdArrowBack } from 'react-icons/md';
 import { getMyCompany, type RepresentativeCompany } from '../api/representatives';
-import AppLayout, { BACK_BAR, PAGE_SHELL } from '../components/AppLayout';
+import AppLayout, { BACK_BAR, BACK_TITLE, PAGE_SHELL } from '../components/AppLayout';
 import { SituationBadge } from '../components/Badge';
-import { CardLabel } from '../components/Card';
+import Card, { CardLabel } from '../components/Card';
+import { SurfaceEmpty } from '../components/EmptyState';
 import { ClientDetailSkeleton } from '../components/Skeleton';
 import { clientSituation } from '../utils/clientSituation';
 import { formatDate, formatMonthYear, formatPhone } from '../utils/format';
@@ -52,9 +53,7 @@ export default function SellerCompanyPage() {
             <MdArrowBack size={20} aria-hidden />
           </Link>
           <div className="flex min-w-0 flex-1 items-center gap-3 pr-2">
-            <p className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-fg">
-              {company?.name || 'Quadra'}
-            </p>
+            <h1 className={BACK_TITLE}>{company?.name || 'Quadra'}</h1>
             {situation ? <SituationBadge situation={situation} /> : null}
           </div>
         </div>
@@ -69,11 +68,8 @@ export default function SellerCompanyPage() {
 
           {company ? (
             <div className="space-y-6">
-              <section>
-                <h1 className="truncate text-lg font-semibold tracking-tight text-fg">
-                  {company.name}
-                </h1>
-                <p className="mt-1 text-sm text-fg-muted">
+              <section aria-label="Contato">
+                <p className="text-sm text-fg-muted">
                   {company.city
                     ? `${company.city}${company.uf ? `/${company.uf}` : ''}`
                     : '—'}
@@ -84,7 +80,7 @@ export default function SellerCompanyPage() {
                       href={wpp}
                       target="_blank"
                       rel="noreferrer"
-                      className="font-medium text-fg underline-offset-2 hover:underline"
+                      className="font-medium text-fg"
                     >
                       {company.owner?.name || 'Sem dono'} ·{' '}
                       {formatPhone(company.owner?.phone)}
@@ -98,8 +94,10 @@ export default function SellerCompanyPage() {
                 </div>
               </section>
 
-              <section>
-                <CardLabel>Comissões nesta quadra</CardLabel>
+              <Card aria-labelledby="comissao-quadra-heading">
+                <CardLabel id="comissao-quadra-heading">
+                  Comissões nesta quadra
+                </CardLabel>
                 <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-fg">
                   {formatCurrencyBRL(company.commissions.total)}
                 </p>
@@ -107,14 +105,12 @@ export default function SellerCompanyPage() {
                   {company.commissions.firstMonthPercent}% da 1ª ·{' '}
                   {company.commissions.recurringPercent}% das seguintes
                 </p>
-              </section>
+              </Card>
 
-              <section>
-                <CardLabel>Pagamentos</CardLabel>
+              <Card aria-labelledby="pagamentos-quadra-heading">
+                <CardLabel id="pagamentos-quadra-heading">Pagamentos</CardLabel>
                 {company.paymentHistory.length === 0 ? (
-                  <p className="mt-3 text-sm text-fg-muted">
-                    Nenhum pagamento registrado.
-                  </p>
+                  <SurfaceEmpty>Nenhum pagamento registrado.</SurfaceEmpty>
                 ) : (
                   <ul className="mt-4 space-y-3">
                     {company.paymentHistory.map((payment) => {
@@ -146,7 +142,7 @@ export default function SellerCompanyPage() {
                     })}
                   </ul>
                 )}
-              </section>
+              </Card>
             </div>
           ) : null}
         </div>

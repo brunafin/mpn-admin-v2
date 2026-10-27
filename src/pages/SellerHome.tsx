@@ -4,9 +4,9 @@ import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
 import { SituationBadge } from '../components/Badge';
 import { metricTileClass } from '../components/Card';
 import EmptyState from '../components/EmptyState';
-import ListRow, { directoryListClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import { ClientsListSkeleton } from '../components/Skeleton';
+import Table, { TableCell, TableRow } from '../components/Table';
 import { clientSituation } from '../utils/clientSituation';
 import { formatCurrencyBRL } from '../utils/formatCurrency';
 
@@ -46,21 +46,19 @@ export default function SellerHomePage() {
             </p>
           ) : null}
 
-          {loading && !portfolio ? (
-            <ClientsListSkeleton separated />
-          ) : null}
+          {loading && !portfolio ? <ClientsListSkeleton /> : null}
 
           {portfolio ? (
             <>
               <div className="mb-4 grid grid-cols-2 gap-2">
                 <div className={metricTileClass}>
-                  <p className="text-xs text-fg-muted">Quadras</p>
+                  <p className="text-xs font-medium text-fg-muted">Quadras</p>
                   <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-fg">
                     {portfolio.companiesCount}
                   </p>
                 </div>
                 <div className={metricTileClass}>
-                  <p className="text-xs text-fg-muted">Comissões</p>
+                  <p className="text-xs font-medium text-fg-muted">Comissões</p>
                   <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-fg">
                     {formatCurrencyBRL(portfolio.commissionTotal)}
                   </p>
@@ -77,26 +75,35 @@ export default function SellerHomePage() {
                   description="Quando uma arena for atribuída a você, ela aparece aqui."
                 />
               ) : (
-                <ul className={directoryListClassName}>
-                  {companies.map((company) => {
-                    const situation = clientSituation(company);
-                    return (
-                      <li key={company.publicId}>
-                        <ListRow
-                          card
-                          to={`/clientes/${company.publicId}`}
-                          title={company.name}
-                          badge={<SituationBadge situation={situation} />}
-                          subtitle={
-                            company.city
-                              ? `${company.city}${company.uf ? `/${company.uf}` : ''}`
-                              : '—'
-                          }
-                        />
-                      </li>
-                    );
-                  })}
-                </ul>
+                <Table
+                  columns={['Quadra', 'Cidade', 'Status']}
+                  gridClass="lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_7rem]"
+                >
+                  {companies.map((company) => (
+                    <TableRow
+                      key={company.publicId}
+                      to={`/clientes/${company.publicId}`}
+                      gridClass="lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_7rem]"
+                      label={company.name}
+                    >
+                      <TableCell>
+                        <p className="truncate text-sm font-medium text-fg">
+                          {company.name}
+                        </p>
+                      </TableCell>
+                      <TableCell label="Cidade">
+                        <p className="truncate text-sm text-fg">
+                          {company.city
+                            ? `${company.city}${company.uf ? `/${company.uf}` : ''}`
+                            : '—'}
+                        </p>
+                      </TableCell>
+                      <TableCell label="Status">
+                        <SituationBadge situation={clientSituation(company)} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </Table>
               )}
             </>
           ) : null}

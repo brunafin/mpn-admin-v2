@@ -13,7 +13,7 @@ export default function CheckMark({ checked, indeterminate = false }: CheckMarkP
     <span
       aria-hidden
       className={`flex size-5 shrink-0 items-center justify-center rounded-md transition-colors peer-disabled:opacity-50 ${
-        on ? "bg-accent-badge text-on-accent-badge" : "bg-[#e6e8ec]"
+        on ? "bg-accent-badge text-on-accent-badge" : "bg-chip"
       }`}
     >
       {indeterminate ? <MdRemove size={16} /> : checked ? <MdCheck size={16} /> : null}

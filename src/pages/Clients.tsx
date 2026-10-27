@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MdOutlineFilterAlt, MdOutlineSearch } from 'react-icons/md';
 import {
   listClients,
@@ -8,11 +8,13 @@ import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
 import { SituationBadge } from '../components/Badge';
 import { buttonClassName } from '../components/Button';
 import EmptyState from '../components/EmptyState';
+import FilterChip from '../components/FilterChip';
 import FormSheet from '../components/FormSheet';
 import { fieldOutlineClass } from '../components/Input';
-import ListRow, { directoryListClassName } from '../components/ListRow';
-import { PageHeader } from '../components/PageTitle';
+import Select from '../components/Select';
 import { ClientsListSkeleton } from '../components/Skeleton';
+import Table, { TableCell, TableRow } from '../components/Table';
+import { PageHeader } from '../components/PageTitle';
 import {
   clientSituation,
   SITUATION_LABEL,
@@ -51,21 +53,14 @@ async function fetchAllClients() {
   return items;
 }
 
-function FilterField({
-  label,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  children: ReactNode;
-}) {
-  return (
-    <label htmlFor={htmlFor} className="mb-3 block">
-      <span className="mb-1.5 block text-sm font-medium text-fg">{label}</span>
-      {children}
-    </label>
-  );
+const CLIENTS_GRID =
+  'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_6.5rem_9.5rem]';
+
+function cityLabel(item: PlatformClientListItem) {
+  const city = item.city?.trim();
+  if (!city) return '—';
+  const uf = item.uf?.trim();
+  return uf ? `${city}/${uf}` : city;
 }
 
 function lastAccessTime(item: PlatformClientListItem) {
@@ -204,6 +199,33 @@ export default function ClientsPage() {
               ) : null}
             </button>
           </div>
+          {activeFilters ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {sort !== 'name' ? (
+                <FilterChip
+                  label={
+                    SORT_OPTIONS.find((option) => option.id === sort)?.name ||
+                    'Ordenação'
+                  }
+                  onRemove={() => setSort('name')}
+                />
+              ) : null}
+              {status ? (
+                <FilterChip
+                  label={SITUATION_LABEL[status]}
+                  onRemove={() => setStatus('')}
+                />
+              ) : null}
+              {city ? (
+                <FilterChip
+                  label={
+                    cities.find((option) => option.id === city)?.name || city
+                  }
+                  onRemove={() => setCity('')}
+                />
+              ) : null}
+            </div>
+          ) : null}
         </PageHeader>
 
         <FormSheet
@@ -211,51 +233,32 @@ export default function ClientsPage() {
           title="Filtros"
           onClose={() => setFiltersOpen(false)}
         >
-          <FilterField label="Ordenar" htmlFor="clientes-ordenar">
-            <select
-              id="clientes-ordenar"
-              value={sort}
-              onChange={(event) => setSort(event.target.value as SortId)}
-              className={`${fieldOutlineClass} w-full`}
-            >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          </FilterField>
-          <FilterField label="Status" htmlFor="clientes-status">
-            <select
-              id="clientes-status"
-              value={status}
-              onChange={(event) =>
-                setStatus(event.target.value as '' | ClientSituation)
-              }
-              className={`${fieldOutlineClass} w-full`}
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option.id || 'all'} value={option.id}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          </FilterField>
-          <FilterField label="Cidade" htmlFor="clientes-cidade">
-            <select
-              id="clientes-cidade"
-              value={city}
-              onChange={(event) => setCity(event.target.value)}
-              className={`${fieldOutlineClass} w-full`}
-            >
-              <option value="">Todas as cidades</option>
-              {cities.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          </FilterField>
+          <Select
+            name="clientes-ordenar"
+            title="Ordenar"
+            value={sort}
+            omitPlaceholder
+            options={SORT_OPTIONS}
+            onChange={(event) => setSort(event.target.value as SortId)}
+          />
+          <Select
+            name="clientes-status"
+            title="Status"
+            value={status}
+            omitPlaceholder
+            options={STATUS_OPTIONS}
+            onChange={(event) =>
+              setStatus(event.target.value as '' | ClientSituation)
+            }
+          />
+          <Select
+            name="clientes-cidade"
+            title="Cidade"
+            value={city}
+            omitPlaceholder
+            options={[{ id: '', name: 'Todas as cidades' }, ...cities]}
+            onChange={(event) => setCity(event.target.value)}
+          />
           {activeFilters ? (
             <button
               type="button"
@@ -277,9 +280,7 @@ export default function ClientsPage() {
             </p>
           ) : null}
 
-          {loading && items.length === 0 ? (
-            <ClientsListSkeleton separated />
-          ) : null}
+          {loading && items.length === 0 ? <ClientsListSkeleton /> : null}
 
           {!loading && visibleItems.length === 0 ? (
             <EmptyState
@@ -289,26 +290,47 @@ export default function ClientsPage() {
           ) : null}
 
           {visibleItems.length > 0 ? (
-            <ul className={directoryListClassName} aria-busy={loading}>
+            <Table
+              columns={['Quadra', 'Cidade', 'Plano', 'Status', 'Último acesso']}
+              gridClass={CLIENTS_GRID}
+              className={loading ? 'opacity-60' : ''}
+            >
               {visibleItems.map((item) => (
-                <li key={`${item.kind}-${item.publicId}`}>
-                  <ListRow
-                    to={`/clientes/${item.publicId}`}
-                    card
-                    title={item.name}
-                    badge={
-                      <SituationBadge situation={clientSituation(item)} />
-                    }
-                    subtitle={
-                      item.accessMode === 'read_only'
-                        ? 'Acesso bloqueado por falta de pagamento'
-                        : undefined
-                    }
-                    meta={`Último acesso ${formatDateTime(item.owner?.lastLoginAt)}`}
-                  />
-                </li>
+                <TableRow
+                  key={`${item.kind}-${item.publicId}`}
+                  to={`/clientes/${item.publicId}`}
+                  gridClass={CLIENTS_GRID}
+                  label={item.name}
+                >
+                  <TableCell>
+                    <p className="truncate text-sm font-medium text-fg">
+                      {item.name}
+                    </p>
+                    {item.accessMode === 'read_only' ? (
+                      <p className="truncate text-xs text-fg-muted">
+                        Acesso bloqueado por falta de pagamento
+                      </p>
+                    ) : null}
+                  </TableCell>
+                  <TableCell label="Cidade">
+                    <p className="truncate text-sm text-fg">{cityLabel(item)}</p>
+                  </TableCell>
+                  <TableCell label="Plano">
+                    <p className="truncate text-sm text-fg">
+                      {item.plan?.name || '—'}
+                    </p>
+                  </TableCell>
+                  <TableCell label="Status">
+                    <SituationBadge situation={clientSituation(item)} />
+                  </TableCell>
+                  <TableCell label="Último acesso">
+                    <p className="truncate text-sm tabular-nums text-fg-muted">
+                      {formatDateTime(item.owner?.lastLoginAt)}
+                    </p>
+                  </TableCell>
+                </TableRow>
               ))}
-            </ul>
+            </Table>
           ) : null}
         </div>
       </section>

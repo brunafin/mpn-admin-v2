@@ -11,9 +11,9 @@ import Button from '../components/Button';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
-import ListRow, { directoryListClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import { ClientsListSkeleton } from '../components/Skeleton';
+import Table, { TableCell, TableRow } from '../components/Table';
 import { formatPhoneMask, onlyPhoneDigits } from '../utils/formatPhone';
 
 export default function RepresentativesPage() {
@@ -59,9 +59,7 @@ export default function RepresentativesPage() {
         />
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 lg:px-8">
-          {loading && items.length === 0 ? (
-            <ClientsListSkeleton separated />
-          ) : null}
+          {loading && items.length === 0 ? <ClientsListSkeleton /> : null}
           {error ? (
             <p className="mb-3 text-sm font-medium text-danger" role="alert">
               {error}
@@ -85,20 +83,30 @@ export default function RepresentativesPage() {
           ) : null}
 
           {items.length > 0 ? (
-            <ul className={directoryListClassName}>
+            <Table
+              columns={['Representante', 'Quadras']}
+              gridClass="lg:grid-cols-[minmax(0,1fr)_8rem]"
+            >
               {items.map((item) => (
-                <li key={item.publicId}>
-                  <ListRow
-                    card
-                    to={`/representantes/${item.publicId}`}
-                    title={item.name}
-                    subtitle={`${item.companiesCount} ${
-                      item.companiesCount === 1 ? 'quadra' : 'quadras'
-                    }`}
-                  />
-                </li>
+                <TableRow
+                  key={item.publicId}
+                  to={`/representantes/${item.publicId}`}
+                  gridClass="lg:grid-cols-[minmax(0,1fr)_8rem]"
+                  label={item.name}
+                >
+                  <TableCell>
+                    <p className="truncate text-sm font-medium text-fg">
+                      {item.name}
+                    </p>
+                  </TableCell>
+                  <TableCell label="Quadras">
+                    <p className="text-sm tabular-nums text-fg">
+                      {item.companiesCount}
+                    </p>
+                  </TableCell>
+                </TableRow>
               ))}
-            </ul>
+            </Table>
           ) : null}
         </div>
       </section>

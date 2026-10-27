@@ -9,13 +9,14 @@ import {
   updateRepresentative,
   type Representative,
 } from '../api/representatives';
-import AppLayout, { BACK_BAR, PAGE_SHELL } from '../components/AppLayout';
+import AppLayout, { BACK_BAR, BACK_TITLE, PAGE_SHELL } from '../components/AppLayout';
 import { Badge, SituationBadge } from '../components/Badge';
 import Button from '../components/Button';
-import Card, { CardLabel } from '../components/Card';
+import Card, { CardLabel, cardClassName } from '../components/Card';
+import { SurfaceEmpty } from '../components/EmptyState';
 import FormSheet from '../components/FormSheet';
 import Input from '../components/Input';
-import ListRow, { directoryListClassName } from '../components/ListRow';
+import Table, { TableCell, TableRow } from '../components/Table';
 import MonthYearWheelPicker from '../components/MonthYearWheelPicker';
 import { ClientDetailSkeleton } from '../components/Skeleton';
 import { clientSituation } from '../utils/clientSituation';
@@ -86,9 +87,7 @@ export default function RepresentativeDetailPage() {
             <MdArrowBack size={20} aria-hidden />
           </Link>
           <div className="flex min-w-0 flex-1 items-center gap-3 pr-2">
-            <p className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-fg">
-              {item?.name || 'Representante'}
-            </p>
+            <h1 className={BACK_TITLE}>{item?.name || 'Representante'}</h1>
             {item && !item.status ? <Badge tone="danger">Inativo</Badge> : null}
           </div>
         </div>
@@ -106,16 +105,13 @@ export default function RepresentativeDetailPage() {
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h1 className="truncate text-lg font-semibold tracking-tight text-fg">
-                      {item.name}
-                    </h1>
-                    <p className="mt-1 text-sm text-fg-muted">{item.username}</p>
+                    <p className="text-sm text-fg-muted">{item.username}</p>
                     {wpp ? (
                       <a
                         href={wpp}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-1 block text-sm text-fg underline-offset-2 hover:underline"
+                        className="mt-1 block text-sm font-medium text-fg"
                       >
                         {formatPhone(item.phone)}
                       </a>
@@ -165,9 +161,11 @@ export default function RepresentativeDetailPage() {
                   </Button>
                 </div>
                 {months.length === 0 ? (
-                  <p className="mt-3 text-sm text-fg-muted">
-                    Nenhum pagamento de comissão informado.
-                  </p>
+                  <div className={`mt-3 ${cardClassName}`}>
+                    <SurfaceEmpty>
+                      Nenhum pagamento de comissão informado.
+                    </SurfaceEmpty>
+                  </div>
                 ) : (
                   <div className="mt-3 space-y-3">
                     {months.map((group) => (
@@ -230,28 +228,45 @@ export default function RepresentativeDetailPage() {
               <section aria-labelledby="quadras-heading">
                 <CardLabel id="quadras-heading">Quadras</CardLabel>
                 {item.companies.length === 0 ? (
-                  <p className="mt-3 text-sm text-fg-muted">
-                    Nenhuma arena atribuída. Defina o representante no detalhe do
-                    cliente.
-                  </p>
+                  <div className={`mt-3 ${cardClassName}`}>
+                    <SurfaceEmpty>
+                      Nenhuma arena atribuída. Defina o representante no detalhe do cliente.
+                    </SurfaceEmpty>
+                  </div>
                 ) : (
-                  <ul className={`mt-3 ${directoryListClassName}`}>
-                    {item.companies.map((company) => (
-                      <li key={company.publicId}>
-                        <ListRow
-                          card
+                  <div className="mt-3">
+                    <Table
+                      columns={['Quadra', 'Cidade', 'Status']}
+                      gridClass="lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_7rem]"
+                    >
+                      {item.companies.map((company) => (
+                        <TableRow
+                          key={company.publicId}
                           to={`/clientes/${company.publicId}`}
-                          title={company.name}
-                          badge={
+                          gridClass="lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_7rem]"
+                          label={company.name}
+                        >
+                          <TableCell>
+                            <p className="truncate text-sm font-medium text-fg">
+                              {company.name}
+                            </p>
+                          </TableCell>
+                          <TableCell label="Cidade">
+                            <p className="truncate text-sm text-fg">
+                              {company.city
+                                ? `${company.city}${company.uf ? `/${company.uf}` : ''}`
+                                : '—'}
+                            </p>
+                          </TableCell>
+                          <TableCell label="Status">
                             <SituationBadge
                               situation={clientSituation(company)}
                             />
-                          }
-                          subtitle={company.city || '—'}
-                        />
-                      </li>
-                    ))}
-                  </ul>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </Table>
+                  </div>
                 )}
               </section>
 

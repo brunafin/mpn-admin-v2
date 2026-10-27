@@ -5,7 +5,7 @@ import {
   type Representative,
 } from '../api/representatives';
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
-import Card, { CardLabel } from '../components/Card';
+import Card, { CardLabel, cardClassName } from '../components/Card';
 import EmptyState from '../components/EmptyState';
 import { PageHeader } from '../components/PageTitle';
 import { MonthCardsSkeleton } from '../components/Skeleton';
@@ -134,11 +134,13 @@ export default function CommissionsPage() {
               <section aria-labelledby="meses-heading">
                 <CardLabel id="meses-heading">Por mês</CardLabel>
                 {months.length === 0 ? (
-                  <EmptyState
-                    title="Nenhuma comissão ainda"
-                    description="As comissões aparecem quando uma mensalidade das suas quadras é paga."
-                    className="py-10"
-                  />
+                  <div className={`mt-3 ${cardClassName}`}>
+                    <EmptyState
+                      title="Nenhuma comissão ainda"
+                      description="As comissões aparecem quando uma mensalidade das suas quadras é paga."
+                      className="py-10"
+                    />
+                  </div>
                 ) : (
                   <div className="mt-3 space-y-3">
                     {months.map((group) => (

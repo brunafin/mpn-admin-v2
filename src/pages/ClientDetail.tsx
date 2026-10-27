@@ -16,7 +16,7 @@ import {
 import { listPlans, type Plan } from '../api/plans';
 import { listRepresentatives, type RepresentativeListItem } from '../api/representatives';
 import Alert from '../components/Alert';
-import AppLayout, { BACK_BAR, PAGE_SHELL } from '../components/AppLayout';
+import AppLayout, { BACK_BAR, BACK_TITLE, PAGE_SHELL } from '../components/AppLayout';
 import { isRepresentativeToken } from '../components/ProtectedRoute';
 import SellerCompanyPage from './SellerCompany';
 import { SituationBadge } from '../components/Badge';
@@ -134,9 +134,7 @@ function AdminClientDetailPage() {
             <MdArrowBack size={20} aria-hidden />
           </Link>
           <div className="flex min-w-0 flex-1 items-center gap-3 pr-2">
-            <p className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-fg">
-              {client?.name || 'Detalhe'}
-            </p>
+            <h1 className={BACK_TITLE}>{client?.name || 'Detalhe'}</h1>
             {client ? (
               <SituationBadge situation={clientSituation(client)} />
             ) : null}
@@ -163,17 +161,14 @@ function AdminClientDetailPage() {
                 </p>
               ) : null}
 
-              <section aria-labelledby="arena-heading">
-                <h1 id="arena-heading" className="sr-only">
-                  {client.name}
-                </h1>
+              <section aria-label="Contato">
                 {ownerWhatsapp ? (
                   <a
                     href={ownerWhatsapp}
                     target="_blank"
                     rel="noreferrer"
                     aria-label={`Abrir WhatsApp de ${client.owner?.name || 'dono'} — ${formatPhone(client.owner?.phone)}`}
-                    className="mpn-tap block min-w-0 truncate text-sm font-medium text-fg underline-offset-2 hover:underline"
+                    className="mpn-tap block min-w-0 truncate text-sm font-medium text-fg"
                   >
                     {client.owner?.name || 'Sem nome'}
                   </a>
@@ -444,29 +439,25 @@ function TextAction({
   children,
   onClick,
   disabled,
-  tone = 'accent',
   'aria-label': ariaLabel,
 }: {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-  tone?: 'accent' | 'danger';
   'aria-label'?: string;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="sm"
+      className="h-8 px-2"
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
-      className={`mpn-tap inline-flex min-h-8 shrink-0 items-center rounded-md px-1 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
-        tone === 'danger'
-          ? 'text-danger hover:bg-danger-soft'
-          : 'text-fg hover:bg-arena-hover'
-      }`}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 

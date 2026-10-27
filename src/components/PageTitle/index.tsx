@@ -17,7 +17,7 @@ export function PageHeader({
       className={`shrink-0 px-4 pt-4 lg:px-8 lg:pt-6 ${className}`.trim()}
     >
       <div className="flex items-center justify-between gap-3">
-        <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight text-fg">
+        <h1 className="min-w-0 truncate text-xl font-semibold tracking-tight text-fg">
           {title}
         </h1>
         {action ? <div className="shrink-0">{action}</div> : null}
@@ -37,7 +37,7 @@ export function PageEyebrow({
 }) {
   return (
     <h2
-      className={`min-w-0 truncate text-lg font-semibold tracking-tight text-fg ${className}`}
+      className={`min-w-0 truncate text-xl font-semibold tracking-tight text-fg ${className}`}
     >
       {children}
     </h2>
@@ -58,7 +58,7 @@ export function PageTitle({
 }) {
   return (
     <Tag
-      className={`min-w-0 truncate text-lg font-semibold tracking-tight text-fg ${
+      className={`min-w-0 truncate text-xl font-semibold tracking-tight text-fg ${
         align === "center" ? "text-center" : ""
       } ${className}`}
     >

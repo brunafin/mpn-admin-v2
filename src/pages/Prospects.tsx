@@ -14,18 +14,20 @@ import {
   type OutreachStatus,
   type ProspectCity,
 } from '../api/prospects';
-import AppLayout, { BACK_BAR, PAGE_SHELL } from '../components/AppLayout';
+import AppLayout, { BACK_BAR, BACK_TITLE, PAGE_SHELL } from '../components/AppLayout';
 import { Badge, OutreachBadge } from '../components/Badge';
 import Button, { buttonClassName } from '../components/Button';
 import Checkbox from '../components/Checkbox';
 import { choiceRowClass } from '../components/Checkbox/row';
 import CheckMark from '../components/Checkbox/Mark';
 import EmptyState, { emptyStateActionClassName } from '../components/EmptyState';
+import FilterChip from '../components/FilterChip';
 import FormSheet from '../components/FormSheet';
 import Input, { fieldOutlineClass } from '../components/Input';
-import ListRow, { directoryListClassName } from '../components/ListRow';
+import { listClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
 import Select from '../components/Select';
+import Table, { TableCell, TableRow } from '../components/Table';
 import { ClientsListSkeleton } from '../components/Skeleton';
 import { UF_OPTIONS } from '../constants/ufs';
 import { samePlaceName } from '../utils/addressCity';
@@ -173,7 +175,7 @@ export default function ProspectsPage() {
           ) : null}
 
           {loading && items.length === 0 ? (
-            <ClientsListSkeleton separated />
+            <ClientsListSkeleton />
           ) : (
             <div className="space-y-6">
               <ProspectFilters
@@ -195,16 +197,18 @@ export default function ProspectsPage() {
               />
 
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="px-2"
                   onClick={() => {
                     void onSanitize();
                   }}
                   disabled={sanitizing}
-                  className="text-sm font-medium text-fg underline-offset-2 hover:underline disabled:opacity-50"
                 >
                   {sanitizing ? 'Corrigindo…' : 'Corrigir cidades pelo endereço'}
-                </button>
+                </Button>
                 {sanitizeHint ? (
                   <p className="text-sm text-fg-muted">{sanitizeHint}</p>
                 ) : null}
@@ -235,40 +239,56 @@ export default function ProspectsPage() {
                   }
                 />
               ) : (
-                <ul
-                  className={`${directoryListClassName} ${
-                    loading ? 'opacity-60' : ''
-                  }`}
-                  aria-busy={loading}
+                <Table
+                  columns={['Quadra', 'Cidade', 'Telefone', 'Status', 'Notas']}
+                  gridClass="lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.8fr)_8.5rem_7rem_minmax(0,1fr)]"
+                  className={loading ? 'opacity-60' : ''}
                 >
-                  {items.map((item) => (
-                    <li key={item.googlePlaceId}>
-                      <ListRow
+                  {items.map((item) => {
+                    const notes = [
+                      item.competitor !== 'unknown'
+                        ? COMPETITOR_LABEL[item.competitor]
+                        : null,
+                      item.alreadyRegistered ? 'Já é cliente' : null,
+                      item.contactedAt ? 'Já houve contato' : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ');
+                    const place = [item.city, item.uf].filter(Boolean).join('/');
+                    return (
+                      <TableRow
+                        key={item.googlePlaceId}
                         to={`/prospectos/${encodeURIComponent(item.googlePlaceId)}`}
-                        card
-                        title={item.name}
-                        badge={<OutreachBadge status={item.outreachStatus} />}
-                        subtitle={[
-                          item.city && item.uf
-                            ? `${item.city}/${item.uf}`
-                            : item.city || item.uf,
-                          item.phone ? formatPhone(item.phone) : 'Sem telefone',
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                        meta={[
-                          item.competitor !== 'unknown'
-                            ? COMPETITOR_LABEL[item.competitor]
-                            : null,
-                          item.alreadyRegistered ? 'Já é cliente' : null,
-                          item.contactedAt ? 'Já houve contato' : null,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      />
-                    </li>
-                  ))}
-                </ul>
+                        gridClass="lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.8fr)_8.5rem_7rem_minmax(0,1fr)]"
+                        label={item.name}
+                      >
+                        <TableCell>
+                          <p className="truncate text-sm font-medium text-fg">
+                            {item.name}
+                          </p>
+                        </TableCell>
+                        <TableCell label="Cidade">
+                          <p className="truncate text-sm text-fg">
+                            {place || '—'}
+                          </p>
+                        </TableCell>
+                        <TableCell label="Telefone">
+                          <p className="truncate text-sm tabular-nums text-fg">
+                            {item.phone ? formatPhone(item.phone) : '—'}
+                          </p>
+                        </TableCell>
+                        <TableCell label="Status">
+                          <OutreachBadge status={item.outreachStatus} />
+                        </TableCell>
+                        <TableCell label="Notas">
+                          <p className="truncate text-sm text-fg-muted">
+                            {notes || '—'}
+                          </p>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </Table>
               )}
 
               {total > 0 ? (
@@ -372,53 +392,61 @@ function ProspectFilters({
           {active ? <span className="tabular-nums">{active}</span> : null}
         </button>
       </div>
+      {active ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {city ? (
+            <FilterChip
+              label={
+                cities.find((row) => `${row.city}|${row.uf || ''}` === city)
+                  ?.city || city.replace('|', '/')
+              }
+              onRemove={() => onCityChange('')}
+            />
+          ) : null}
+          {status ? (
+            <FilterChip
+              label={
+                STATUS_FILTERS.find((option) => option.id === status)?.name ||
+                status
+              }
+              onRemove={() => onStatusChange('')}
+            />
+          ) : null}
+        </div>
+      ) : null}
 
       <FormSheet
         isOpen={open}
         title="Filtros"
         onClose={() => onOpenChange(false)}
       >
-        <label htmlFor="prospectos-cidade" className="mb-3 block">
-          <span className="mb-1.5 block text-sm font-medium text-fg">
-            Cidade
-          </span>
-          <select
-            id="prospectos-cidade"
-            value={city}
-            onChange={(event) => onCityChange(event.target.value)}
-            className={`${fieldOutlineClass} w-full`}
-          >
-            <option value="">Todas as cidades</option>
-            {cities.map((row) => (
-              <option
-                key={`${row.city}|${row.uf || ''}`}
-                value={`${row.city}|${row.uf || ''}`}
-              >
-                {row.city}
-                {row.uf ? `/${row.uf}` : ''} ({row.count})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label htmlFor="prospectos-status" className="mb-3 block">
-          <span className="mb-1.5 block text-sm font-medium text-fg">
-            Status
-          </span>
-          <select
-            id="prospectos-status"
-            value={status}
-            onChange={(event) =>
-              onStatusChange(event.target.value as '' | OutreachStatus)
-            }
-            className={`${fieldOutlineClass} w-full`}
-          >
-            {STATUS_FILTERS.map((option) => (
-              <option key={option.id || 'all'} value={option.id}>
-                {option.id === '' ? 'Todos os status' : option.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          name="prospectos-cidade"
+          title="Cidade"
+          value={city}
+          omitPlaceholder
+          options={[
+            { id: '', name: 'Todas as cidades' },
+            ...cities.map((row) => ({
+              id: `${row.city}|${row.uf || ''}`,
+              name: `${row.city}${row.uf ? `/${row.uf}` : ''} (${row.count})`,
+            })),
+          ]}
+          onChange={(event) => onCityChange(event.target.value)}
+        />
+        <Select
+          name="prospectos-status"
+          title="Status"
+          value={status}
+          omitPlaceholder
+          options={STATUS_FILTERS.map((option) => ({
+            id: option.id,
+            name: option.id === '' ? 'Todos os status' : option.name,
+          }))}
+          onChange={(event) =>
+            onStatusChange(event.target.value as '' | OutreachStatus)
+          }
+        />
         {active ? (
           <button
             type="button"
@@ -575,9 +603,7 @@ function SearchCityView({
           >
             <MdArrowBack size={20} aria-hidden />
           </button>
-          <h1 className="min-w-0 truncate text-sm font-medium text-fg">
-            Buscar no Google
-          </h1>
+          <h1 className={BACK_TITLE}>Buscar no Google</h1>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 lg:px-8">
@@ -632,17 +658,19 @@ function SearchCityView({
                     onChange={(event) => setPhoneOnly(event.target.checked)}
                   />
                   {visibleHits.some((hit) => !hit.inPortfolio) ? (
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="px-2"
                       onClick={toggleAllNew}
-                      className="text-sm font-medium text-fg underline-offset-2 hover:underline"
                     >
                       {visibleHits.some(
                         (hit) => !hit.inPortfolio && !selected[hit.googlePlaceId],
                       )
                         ? 'Selecionar todas'
                         : 'Desmarcar todas'}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               </div>
@@ -662,7 +690,7 @@ function SearchCityView({
                   className="py-10"
                 />
               ) : (
-                <ul className={directoryListClassName}>
+                <ul className={listClassName}>
                   {visibleHits.map((hit) => {
                     const checked = Boolean(selected[hit.googlePlaceId]);
                     return (
@@ -670,7 +698,7 @@ function SearchCityView({
                         <label
                           className={choiceRowClass(
                             checked,
-                            'w-full items-start!',
+                            'w-full items-start! rounded-none! shadow-none!',
                           )}
                         >
                           <input
