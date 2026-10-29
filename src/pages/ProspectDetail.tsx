@@ -1,21 +1,26 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { MdArrowBack, MdOpenInNew } from 'react-icons/md';
 import {
   COMPETITOR_LABEL,
   getProspect,
+  LOST_REASON_LABEL,
   OUTREACH_LABEL,
+  PLACE_KIND_LABEL,
   updateProspect,
   type CourtCompetitor,
   type GoogleCourtProspect,
+  type LostReason,
   type OutreachStatus,
+  type PlaceKind,
 } from '../api/prospects';
 import AppLayout, { BACK_BAR, BACK_TITLE, PAGE_SHELL } from '../components/AppLayout';
 import { OutreachBadge } from '../components/Badge';
 import Button, { buttonClassName } from '../components/Button';
 import { CardLabel } from '../components/Card';
 import Input, { fieldOutlineBase } from '../components/Input';
+import RadioGroup from '../components/RadioGroup';
 import Select from '../components/Select';
 import { ClientDetailSkeleton } from '../components/Skeleton';
 import { UF_OPTIONS } from '../constants/ufs';
@@ -34,14 +39,34 @@ const COMPETITOR_OPTIONS = (
   Object.keys(COMPETITOR_LABEL) as CourtCompetitor[]
 ).map((id) => ({ id, name: COMPETITOR_LABEL[id] }));
 
+const PLACE_KIND_OPTIONS = [
+  { id: '', name: 'Ainda não sei' },
+  ...(Object.keys(PLACE_KIND_LABEL) as PlaceKind[]).map((id) => ({
+    id,
+    name: PLACE_KIND_LABEL[id],
+  })),
+];
+
+const LOST_REASON_OPTIONS = (Object.keys(LOST_REASON_LABEL) as LostReason[]).map(
+  (value) => ({ value, label: LOST_REASON_LABEL[value] }),
+);
+
 export default function ProspectDetailPage() {
   const { googlePlaceId } = useParams<{ googlePlaceId: string }>();
+  const [searchParams] = useSearchParams();
+  const fromQueue = searchParams.get('from') === 'abordar';
   const placeId = googlePlaceId ? decodeURIComponent(googlePlaceId) : '';
   const [prospect, setProspect] = useState<GoogleCourtProspect | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [status, setStatus] = useState<OutreachStatus>('new');
   const [competitor, setCompetitor] = useState<CourtCompetitor>('unknown');
+  const [placeKind, setPlaceKind] = useState<PlaceKind | ''>('');
+  const [nextActionOn, setNextActionOn] = useState('');
+  const [lostReason, setLostReason] = useState<LostReason | ''>('');
+  const [rentsHourly, setRentsHourly] = useState<'yes' | 'no' | 'unknown'>(
+    'unknown',
+  );
   const [notes, setNotes] = useState('');
   const [city, setCity] = useState('');
   const [uf, setUf] = useState('');
@@ -60,6 +85,16 @@ export default function ProspectDetailPage() {
         setProspect(data);
         setStatus(data.outreachStatus);
         setCompetitor(data.competitor);
+        setPlaceKind(data.placeKind || '');
+        setNextActionOn(data.nextActionOn || '');
+        setLostReason(data.lostReason || '');
+        setRentsHourly(
+          data.rentsHourly === true
+            ? 'yes'
+            : data.rentsHourly === false
+              ? 'no'
+              : 'unknown',
+        );
         setNotes(data.notes || '');
         setCity(data.city || '');
         setUf(data.uf || '');
@@ -79,6 +114,16 @@ export default function ProspectDetailPage() {
     setProspect(data);
     setStatus(data.outreachStatus);
     setCompetitor(data.competitor);
+    setPlaceKind(data.placeKind || '');
+    setNextActionOn(data.nextActionOn || '');
+    setLostReason(data.lostReason || '');
+    setRentsHourly(
+      data.rentsHourly === true
+        ? 'yes'
+        : data.rentsHourly === false
+          ? 'no'
+          : 'unknown',
+    );
     setNotes(data.notes || '');
     setCity(data.city || '');
     setUf(data.uf || '');
@@ -87,19 +132,16 @@ export default function ProspectDetailPage() {
   const onSave = async (event: FormEvent) => {
     event.preventDefault();
     if (!placeId) return;
+    if (status === 'lost' && !lostReason) {
+      setFormError('Informe o motivo de sem interesse.');
+      setSavedHint('');
+      return;
+    }
     setSaving(true);
     setFormError('');
     setSavedHint('');
     try {
-      const data = await updateProspect(placeId, {
-        outreachStatus: status,
-        competitor,
-        notes,
-        city,
-        ...(uf.trim().length === 2
-          ? { uf: uf.trim().toUpperCase() }
-          : {}),
-      });
+      const data = await updateProspect(placeId, payloadFromForm());
       applyProspect(data);
       setSavedHint('Salvo.');
     } catch (err) {
@@ -109,22 +151,50 @@ export default function ProspectDetailPage() {
     }
   };
 
+  const payloadFromForm = () => ({
+    outreachStatus: status,
+    competitor,
+    placeKind: placeKind || null,
+    nextActionOn: nextActionOn || null,
+    rentsHourly:
+      status === 'lost' && lostReason === 'no_hourly'
+        ? false
+        : rentsHourly === 'yes'
+          ? true
+          : rentsHourly === 'no'
+            ? false
+            : null,
+    lostReason: status === 'lost' ? lostReason || null : null,
+    notes,
+    city,
+    ...(uf.trim().length === 2 ? { uf: uf.trim().toUpperCase() } : {}),
+  });
+
   const onWhatsApp = async () => {
     if (!placeId || !prospect) return;
+    if (status === 'lost' && !lostReason) return;
     try {
-      const data = await updateProspect(placeId, { markContacted: true });
+      const data = await updateProspect(placeId, {
+        ...payloadFromForm(),
+        markContacted: true,
+      });
       applyProspect(data);
     } catch {
       // Abre o WhatsApp mesmo se o registro de contato falhar.
     }
   };
 
-  const wpp = prospect
-    ? whatsappUrlWithText(
-        prospect.phone,
-        prospectOutreachMessage(prospect.name),
-      )
+  const outreachText = prospect
+    ? prospectOutreachMessage({
+        name: prospect.name,
+        placeKind: placeKind || null,
+        competitor,
+      })
     : null;
+  const wpp =
+    prospect && outreachText
+      ? whatsappUrlWithText(prospect.phone, outreachText)
+      : null;
   const addressCity = parseCityUfFromAddress(prospect?.fullAddress);
   const addressDiffers = Boolean(
     addressCity.city &&
@@ -137,8 +207,10 @@ export default function ProspectDetailPage() {
       <section className={PAGE_SHELL}>
         <div className={BACK_BAR}>
           <Link
-            to="/prospectos"
-            aria-label="Voltar para prospectos"
+            to={fromQueue ? '/prospectos?fila=abordar' : '/prospectos'}
+            aria-label={
+              fromQueue ? 'Voltar para a fila' : 'Voltar para prospectos'
+            }
             className="mpn-tap flex size-9 items-center justify-center rounded-md text-fg hover:bg-arena-hover"
           >
             <MdArrowBack size={20} aria-hidden />
@@ -198,7 +270,12 @@ export default function ProspectDetailPage() {
                       href={wpp}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={() => {
+                      onClick={(event) => {
+                        if (status === 'lost' && !lostReason) {
+                          event.preventDefault();
+                          setFormError('Informe o motivo de sem interesse.');
+                          return;
+                        }
                         void onWhatsApp();
                       }}
                       className={buttonClassName({ variant: 'primary', size: 'sm' })}
@@ -207,7 +284,9 @@ export default function ProspectDetailPage() {
                     </a>
                   ) : (
                     <p className="text-sm text-fg-muted">
-                      Sem telefone no Google.
+                      {placeKind === 'closed'
+                        ? 'Fechou. Fora da fila de abordagem.'
+                        : 'Sem telefone no Google.'}
                     </p>
                   )}
                   {prospect.googleMapsUri ? (
@@ -277,6 +356,39 @@ export default function ProspectDetailPage() {
                     </>
                   ) : null}
                   <Select
+                    name="placeKind"
+                    title="Tipo"
+                    value={placeKind}
+                    omitPlaceholder
+                    options={PLACE_KIND_OPTIONS}
+                    onChange={(event) =>
+                      setPlaceKind(event.target.value as PlaceKind | '')
+                    }
+                  />
+                  <RadioGroup
+                    name="rentsHourly"
+                    legend="Aluga hora"
+                    className="mb-3"
+                    value={rentsHourly}
+                    options={[
+                      { value: 'yes', label: 'Sim' },
+                      { value: 'no', label: 'Não' },
+                      { value: 'unknown', label: 'Ainda não sei' },
+                    ]}
+                    onChange={(event) =>
+                      setRentsHourly(
+                        event.target.value as 'yes' | 'no' | 'unknown',
+                      )
+                    }
+                  />
+                  <Input
+                    name="nextActionOn"
+                    title="Próxima ação"
+                    type="date"
+                    value={nextActionOn}
+                    onChange={(event) => setNextActionOn(event.target.value)}
+                  />
+                  <Select
                     name="outreachStatus"
                     title="Status"
                     value={status}
@@ -285,6 +397,19 @@ export default function ProspectDetailPage() {
                       setStatus(event.target.value as OutreachStatus)
                     }
                   />
+                  {status === 'lost' ? (
+                    <RadioGroup
+                      name="lostReason"
+                      legend="Motivo"
+                      required
+                      className="mb-3"
+                      value={lostReason}
+                      options={LOST_REASON_OPTIONS}
+                      onChange={(event) =>
+                        setLostReason(event.target.value as LostReason)
+                      }
+                    />
+                  ) : null}
                   <Select
                     name="competitor"
                     title="Agenda atual"

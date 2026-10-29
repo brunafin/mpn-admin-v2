@@ -5,6 +5,8 @@ export type DashboardTrialEndingSoon = {
   name: string;
   trialEndsAt: string;
   courtsCount: number;
+  ownerName: string | null;
+  phone: string | null;
 };
 
 export type DashboardRecentLogin = {

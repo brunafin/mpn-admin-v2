@@ -3,19 +3,44 @@ import { Link } from 'react-router-dom';
 import {
   getDashboard,
   type DashboardOverdueClient,
+  type DashboardTrialEndingSoon,
   type PlatformDashboard,
 } from '../api/dashboard';
+import {
+  listProspectCities,
+  listProspects,
+  PLACE_KIND_LABEL,
+  updateProspect,
+  type GoogleCourtProspect,
+  type ProspectCity,
+} from '../api/prospects';
 import AppLayout, { PAGE_SHELL } from '../components/AppLayout';
 import { buttonClassName } from '../components/Button';
 import { CardLabel, metricTileClass, surfaceShadowClass } from '../components/Card';
 import { SurfaceEmpty } from '../components/EmptyState';
 import { listClassName } from '../components/ListRow';
 import { PageHeader } from '../components/PageTitle';
-import { formatCurrency, formatDate, formatMinutesAgo } from '../utils/format';
+import Select from '../components/Select';
+import {
+  formatCalendarDate,
+  formatCurrency,
+  formatDate,
+  formatMinutesAgo,
+  todayKeyBrazil,
+} from '../utils/format';
 import {
   paymentReminderMessage,
+  prospectOutreachMessage,
+  trialActivationMessage,
   whatsappUrlWithText,
 } from '../utils/whatsapp';
+import {
+  parseWeekCityKey,
+  readWeekCity,
+  weekCityKey,
+  writeWeekCity,
+  type WeekCity,
+} from '../utils/weekCity';
 import { isRepresentativeToken } from '../components/ProtectedRoute';
 import SellerHomePage from './SellerHome';
 
@@ -49,6 +74,13 @@ function AdminHomePage() {
   const [stats, setStats] = useState<PlatformDashboard>(emptyDashboard);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [queue, setQueue] = useState<WorkQueue>('cobrar');
+  const [weekCity, setWeekCity] = useState<WeekCity | null>(readWeekCity);
+  const [cities, setCities] = useState<ProspectCity[]>([]);
+  const [approach, setApproach] = useState<GoogleCourtProspect[]>([]);
+  const [approachTotal, setApproachTotal] = useState(0);
+  const [approachLoading, setApproachLoading] = useState(false);
+  const [approachError, setApproachError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +120,52 @@ function AdminHomePage() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    listProspectCities()
+      .then((rows) => {
+        if (!cancelled) setCities(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setCities([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!weekCity) return;
+    let cancelled = false;
+    setApproachLoading(true);
+    setApproachError('');
+    listProspects({
+      city: weekCity.city,
+      uf: weekCity.uf || undefined,
+      hasPhone: true,
+      hourly: 'yes',
+      due: true,
+      open: true,
+      sort: 'reviews',
+      page: 1,
+      limit: 20,
+    })
+      .then((list) => {
+        if (cancelled) return;
+        setApproach(list.items);
+        setApproachTotal(list.total);
+      })
+      .catch(() => {
+        if (!cancelled) setApproachError('Não foi possível carregar a fila de abordagem.');
+      })
+      .finally(() => {
+        if (!cancelled) setApproachLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [weekCity]);
+
   const clientMetrics = [
     { label: 'Clientes', value: String(stats.arenas) },
     { label: 'Ativos', value: String(stats.activeArenas) },
@@ -100,6 +178,16 @@ function AdminHomePage() {
     { label: 'Reservas hoje', value: String(stats.reservationsToday) },
     { label: 'Reservas em 7 dias', value: String(stats.reservationsLast7Days) },
   ];
+
+  const overdue = stats.overdueClients ?? [];
+  const trials = stats.trialsEndingSoon ?? [];
+  const approachItems = weekCity ? approach : [];
+  const approachCount = weekCity ? approachTotal : 0;
+  const queueCounts: Record<WorkQueue, number> = {
+    cobrar: overdue.length,
+    ativar: trials.length,
+    abordar: approachCount,
+  };
 
   return (
     <AppLayout>
@@ -117,22 +205,82 @@ function AdminHomePage() {
             <HomeSkeleton />
           ) : (
             <div className="space-y-8">
+              <section aria-labelledby="filas-heading">
+                <CardLabel id="filas-heading" as="h2" className="sr-only">
+                  Filas do dia
+                </CardLabel>
+                <div
+                  role="tablist"
+                  aria-label="Filas do dia"
+                  className="grid grid-cols-3 gap-2"
+                >
+                  {(
+                    [
+                      ['cobrar', 'Cobrar'],
+                      ['ativar', 'Ativar'],
+                      ['abordar', 'Abordar'],
+                    ] as const
+                  ).map(([id, label]) => {
+                    const selected = queue === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        role="tab"
+                        id={`fila-${id}`}
+                        aria-selected={selected}
+                        aria-controls={`painel-${id}`}
+                        onClick={() => setQueue(id)}
+                        className={buttonClassName({
+                          variant: selected ? 'primary' : 'secondary',
+                          size: 'sm',
+                          fullWidth: true,
+                        })}
+                      >
+                        {label}
+                        <span className="tabular-nums">{queueCounts[id]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div
+                  role="tabpanel"
+                  id={`painel-${queue}`}
+                  aria-labelledby={`fila-${queue}`}
+                  className="mt-4"
+                >
+                  {queue === 'cobrar' ? (
+                    <OverdueClientsSection clients={overdue} />
+                  ) : null}
+                  {queue === 'ativar' ? (
+                    <TrialsEndingSection trials={trials} />
+                  ) : null}
+                  {queue === 'abordar' ? (
+                    <ApproachSection
+                      cities={cities}
+                      weekCity={weekCity}
+                      items={approachItems}
+                      total={approachCount}
+                      loading={approachLoading}
+                      error={approachError}
+                      onWeekCity={(value) => {
+                        const next = parseWeekCityKey(value);
+                        writeWeekCity(next);
+                        setWeekCity(next);
+                      }}
+                    />
+                  ) : null}
+                </div>
+              </section>
+
               <section aria-labelledby="resumo-heading">
                 <CardLabel id="resumo-heading" as="h2">
-                  Clientes
+                  Números
                 </CardLabel>
                 <MetricGrid items={clientMetrics} className="mt-2" />
-              </section>
-
-              <section aria-labelledby="operacao-heading">
-                <CardLabel id="operacao-heading" as="h2">
-                  Operação
-                </CardLabel>
                 <MetricGrid items={operationMetrics} className="mt-2" />
               </section>
-
-              <OverdueClientsSection clients={stats.overdueClients ?? []} />
-              <TrialsEndingSection trials={stats.trialsEndingSoon ?? []} />
 
               <Panel
                 id="online-heading"
@@ -175,6 +323,8 @@ function AdminHomePage() {
     </AppLayout>
   );
 }
+
+type WorkQueue = 'cobrar' | 'ativar' | 'abordar';
 
 function overdueSubtitle(item: DashboardOverdueClient): string {
   const money = formatCurrency(item.amount);
@@ -259,40 +409,216 @@ function OverdueClientsSection({
 function TrialsEndingSection({
   trials,
 }: {
-  trials: PlatformDashboard['trialsEndingSoon'];
+  trials: DashboardTrialEndingSoon[];
 }) {
   return (
     <Panel
       id="trial-heading"
-      title="Trial acabando"
+      title="Teste acabando"
       count={trials.length}
-      empty="Nenhum trial perto do fim."
+      empty="Nenhum teste acabando nesta semana."
     >
       {trials.length
-        ? trials.map((item) => (
-            <li key={item.publicId}>
-              <Link
-                to={`/clientes/${item.publicId}`}
-                className="mpn-tap flex min-h-11 items-center justify-between gap-3 px-4 py-3 hover:bg-arena-hover"
+        ? trials.map((item) => {
+            const reminder = whatsappUrlWithText(
+              item.phone,
+              trialActivationMessage({
+                ownerName: item.ownerName,
+                arenaName: item.name,
+                trialEndsAt: item.trialEndsAt,
+              }),
+            );
+            return (
+              <li
+                key={item.publicId}
+                className="flex items-center gap-3 px-4 py-3"
               >
-                <span className="min-w-0">
+                <Link
+                  to={`/clientes/${item.publicId}`}
+                  className="mpn-tap min-w-0 flex-1 rounded-md hover:bg-arena-hover"
+                >
                   <span className="block truncate text-sm font-medium text-fg">
                     {item.name}
                   </span>
                   <span className="mt-0.5 block text-sm text-fg-muted">
                     {item.courtsCount}{' '}
                     {item.courtsCount === 1 ? 'quadra' : 'quadras'}
+                    {' · '}
+                    {formatDate(item.trialEndsAt)}
                   </span>
-                </span>
-                <span className="shrink-0 text-sm tabular-nums text-fg-muted">
-                  {formatDate(item.trialEndsAt)}
-                </span>
-              </Link>
-            </li>
-          ))
+                </Link>
+                {reminder ? (
+                  <a
+                    href={reminder}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Chamar ${item.name} para ativar o plano`}
+                    className={buttonClassName({
+                      variant: 'primary',
+                      size: 'sm',
+                      className: 'shrink-0',
+                    })}
+                  >
+                    WhatsApp
+                  </a>
+                ) : (
+                  <span className="shrink-0 text-xs text-fg-muted">
+                    Sem telefone
+                  </span>
+                )}
+              </li>
+            );
+          })
         : null}
     </Panel>
   );
+}
+
+function ApproachSection({
+  cities,
+  weekCity,
+  items,
+  total,
+  loading,
+  error,
+  onWeekCity,
+}: {
+  cities: ProspectCity[];
+  weekCity: WeekCity | null;
+  items: GoogleCourtProspect[];
+  total: number;
+  loading: boolean;
+  error: string;
+  onWeekCity: (value: string) => void;
+}) {
+  return (
+    <section aria-labelledby="abordar-heading">
+      <CardLabel id="abordar-heading" as="h2">
+        Abordar
+      </CardLabel>
+      <div className="mt-2">
+        <Select
+          name="cidade-semana-inicio"
+          title="Cidade da semana"
+          value={weekCityKey(weekCity)}
+          omitPlaceholder
+          options={[
+            { id: '', name: 'Escolha a cidade' },
+            ...cities.map((row) => ({
+              id: `${row.city}|${row.uf || ''}`,
+              name: `${row.city}${row.uf ? `/${row.uf}` : ''} (${row.count})`,
+            })),
+          ]}
+          onChange={(event) => onWeekCity(event.target.value)}
+        />
+      </div>
+      <p className="mb-3 text-sm text-fg-muted">
+        Com telefone, que aluga hora ou ainda não foi marcado. Próxima ação
+        futura fica de fora. As mais avaliadas no Google vêm primeiro.
+      </p>
+      {error ? (
+        <p className="mb-3 text-sm font-medium text-danger" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {!weekCity ? (
+        <div className={listClassName}>
+          <SurfaceEmpty>Escolha a cidade da semana para abrir a fila.</SurfaceEmpty>
+        </div>
+      ) : (
+        <div className={listClassName}>
+          {loading && items.length === 0 ? (
+            <SurfaceEmpty>Carregando a fila…</SurfaceEmpty>
+          ) : items.length === 0 ? (
+            <SurfaceEmpty>
+              Nada para abordar hoje nessa cidade.
+            </SurfaceEmpty>
+          ) : (
+            <ul>
+              {items.map((item) => {
+                const text = prospectOutreachMessage({
+                  name: item.name,
+                  placeKind: item.placeKind,
+                  competitor: item.competitor,
+                });
+                const reminder = text
+                  ? whatsappUrlWithText(item.phone, text)
+                  : null;
+                return (
+                  <li
+                    key={item.googlePlaceId}
+                    className="flex items-center gap-3 px-4 py-3"
+                  >
+                    <Link
+                      to={`/prospectos/${encodeURIComponent(item.googlePlaceId)}?from=abordar`}
+                      className="mpn-tap min-w-0 flex-1 rounded-md hover:bg-arena-hover"
+                    >
+                      <span className="block truncate text-sm font-medium text-fg">
+                        {item.name}
+                      </span>
+                      <span className="mt-0.5 block truncate text-sm text-fg-muted">
+                        {approachSubtitle(item)}
+                      </span>
+                    </Link>
+                    {reminder ? (
+                      <a
+                        href={reminder}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Abordar ${item.name} no WhatsApp`}
+                        onClick={() => {
+                          void updateProspect(item.googlePlaceId, {
+                            markContacted: true,
+                          }).catch(() => undefined);
+                        }}
+                        className={buttonClassName({
+                          variant: 'primary',
+                          size: 'sm',
+                          className: 'shrink-0',
+                        })}
+                      >
+                        WhatsApp
+                      </a>
+                    ) : (
+                      <span className="shrink-0 text-xs text-fg-muted">
+                        Sem telefone
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+      {weekCity && total > items.length ? (
+        <p className="mt-3">
+          <Link
+            to="/prospectos?fila=abordar"
+            className={buttonClassName({ variant: 'secondary', size: 'sm' })}
+          >
+            Ver as {total}
+          </Link>
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function approachSubtitle(item: GoogleCourtProspect): string {
+  const reviews =
+    item.userRatingsTotal != null
+      ? `${item.userRatingsTotal} avaliações`
+      : 'Sem avaliações';
+  const kind = item.placeKind ? PLACE_KIND_LABEL[item.placeKind] : null;
+  const when = item.nextActionOn
+    ? item.nextActionOn < todayKeyBrazil()
+      ? `atrasada ${formatCalendarDate(item.nextActionOn)}`
+      : item.nextActionOn === todayKeyBrazil()
+        ? 'hoje'
+        : formatCalendarDate(item.nextActionOn)
+    : 'sem data';
+  return [reviews, kind, when].filter(Boolean).join(' · ');
 }
 
 function Panel({

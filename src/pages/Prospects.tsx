@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import axios from 'axios';
+import { Link, useSearchParams } from 'react-router-dom';
 import { MdArrowBack, MdOutlineFilterAlt, MdOutlineSearch } from 'react-icons/md';
 import {
   COMPETITOR_LABEL,
@@ -7,6 +8,7 @@ import {
   listProspectCities,
   listProspects,
   OUTREACH_LABEL,
+  PLACE_KIND_LABEL,
   sanitizeProspects,
   searchProspects,
   type GoogleCourtProspect,
@@ -31,7 +33,13 @@ import Table, { TableCell, TableRow } from '../components/Table';
 import { ClientsListSkeleton } from '../components/Skeleton';
 import { UF_OPTIONS } from '../constants/ufs';
 import { samePlaceName } from '../utils/addressCity';
-import { formatPhone } from '../utils/format';
+import { formatCalendarDate, formatPhone, todayKeyBrazil } from '../utils/format';
+import {
+  parseWeekCityKey,
+  readWeekCity,
+  weekCityKey,
+  writeWeekCity,
+} from '../utils/weekCity';
 
 const PAGE_SIZE = 20;
 
@@ -46,6 +54,12 @@ const STATUS_FILTERS: Array<{ id: '' | OutreachStatus; name: string }> = [
 ];
 
 export default function ProspectsPage() {
+  const [searchParams] = useSearchParams();
+  if (searchParams.get('fila') === 'abordar') return <ApproachQueuePage />;
+  return <PortfolioProspects />;
+}
+
+function PortfolioProspects() {
   const [mode, setMode] = useState<'portfolio' | 'search'>('portfolio');
   const [items, setItems] = useState<GoogleCourtProspect[]>([]);
   const [total, setTotal] = useState(0);
@@ -155,15 +169,23 @@ export default function ProspectsPage() {
         <PageHeader
           title="Prospectos"
           action={
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={() => setMode('search')}
-            >
-              <MdOutlineSearch size={16} aria-hidden />
-              Buscar cidade
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/prospectos?fila=abordar"
+                className={buttonClassName({ variant: 'secondary', size: 'sm' })}
+              >
+                Fila da semana
+              </Link>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => setMode('search')}
+              >
+                <MdOutlineSearch size={16} aria-hidden />
+                Buscar cidade
+              </Button>
+            </div>
           }
         />
 
@@ -246,6 +268,10 @@ export default function ProspectsPage() {
                 >
                   {items.map((item) => {
                     const notes = [
+                      item.placeKind ? PLACE_KIND_LABEL[item.placeKind] : null,
+                      item.nextActionOn
+                        ? `próxima ${formatCalendarDate(item.nextActionOn)}`
+                        : null,
                       item.competitor !== 'unknown'
                         ? COMPETITOR_LABEL[item.competitor]
                         : null,
@@ -768,6 +794,238 @@ function SearchCityView({
                     ? 'Puxando…'
                     : `Puxar ${selectedHits.length} para o portfólio`}
                 </Button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </section>
+    </AppLayout>
+  );
+}
+
+function actionWhen(value: string | null): string {
+  if (!value) return 'Sem data';
+  const today = todayKeyBrazil();
+  if (value < today) return `Atrasada · ${formatCalendarDate(value)}`;
+  if (value === today) return 'Hoje';
+  return formatCalendarDate(value) || value;
+}
+
+function ApproachQueuePage() {
+  const [weekCity, setWeekCity] = useState(readWeekCity);
+  const [cities, setCities] = useState<ProspectCity[]>([]);
+  const [items, setItems] = useState<GoogleCourtProspect[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [visibleQ, setVisibleQ] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const debouncedQRef = useRef('');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = visibleQ.trim();
+      if (debouncedQRef.current === next) return;
+      debouncedQRef.current = next;
+      setDebouncedQ(next);
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [visibleQ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listProspectCities()
+      .then((rows) => {
+        if (!cancelled) setCities(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setCities([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!weekCity) return;
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    listProspects({
+      q: debouncedQ || undefined,
+      city: weekCity.city,
+      uf: weekCity.uf || undefined,
+      hasPhone: true,
+      hourly: 'yes',
+      due: true,
+      open: true,
+      sort: 'reviews',
+      page,
+      limit: PAGE_SIZE,
+    })
+      .then((list) => {
+        if (cancelled) return;
+        setItems(list.items);
+        setTotal(list.total);
+      })
+      .catch(() => {
+        if (!cancelled) setError('Não foi possível carregar a fila.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [weekCity, debouncedQ, page]);
+
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const rangeFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const rangeTo = Math.min(page * PAGE_SIZE, total);
+
+  return (
+    <AppLayout>
+      <section className={PAGE_SHELL}>
+        <div className={BACK_BAR}>
+          <Link
+            to="/inicio"
+            aria-label="Voltar ao início"
+            className="mpn-tap flex size-9 items-center justify-center rounded-md text-fg hover:bg-arena-hover"
+          >
+            <MdArrowBack size={20} aria-hidden />
+          </Link>
+          <h1 className={BACK_TITLE}>Abordar</h1>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 lg:px-8">
+          <Select
+            name="cidade-da-semana"
+            title="Cidade da semana"
+            value={weekCityKey(weekCity)}
+            omitPlaceholder
+            options={[
+              { id: '', name: 'Escolha a cidade' },
+              ...cities.map((row) => ({
+                id: `${row.city}|${row.uf || ''}`,
+                name: `${row.city}${row.uf ? `/${row.uf}` : ''} (${row.count})`,
+              })),
+            ]}
+            onChange={(event) => {
+              const next = parseWeekCityKey(event.target.value);
+              writeWeekCity(next);
+              setWeekCity(next);
+              setPage(1);
+            }}
+          />
+          <p className="mb-4 text-sm text-fg-muted">
+            Com telefone, que aluga hora ou ainda não foi marcado. Próxima
+            ação futura fica de fora. As mais avaliadas no Google vêm primeiro.
+          </p>
+
+          <div className="relative mb-4 max-w-xl">
+            <label htmlFor="fila-busca" className="sr-only">
+              Buscar na fila
+            </label>
+            <input
+              id="fila-busca"
+              type="search"
+              value={visibleQ}
+              onChange={(event) => setVisibleQ(event.target.value)}
+              placeholder="Nome ou telefone"
+              autoComplete="off"
+              className={`${fieldOutlineClass} w-full pe-11`}
+            />
+            <span className="pointer-events-none absolute right-0.5 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center text-fg-muted">
+              <MdOutlineSearch size={18} aria-hidden />
+            </span>
+          </div>
+
+          {error ? (
+            <p className="mb-3 text-sm font-medium text-danger" role="alert">
+              {error}
+            </p>
+          ) : null}
+
+          {!weekCity ? (
+            <EmptyState
+              title="Escolha a cidade da semana"
+              description="A fila das centenas de quadras só abre depois desse corte."
+            />
+          ) : loading && items.length === 0 ? (
+            <ClientsListSkeleton />
+          ) : items.length === 0 ? (
+            <EmptyState
+              title="Nada para abordar hoje"
+              description="Quem não tem telefone, não aluga hora, fechou ou tem próxima ação futura fica de fora."
+            />
+          ) : (
+            <Table
+              columns={['Quadra', 'Avaliações', 'Tipo', 'Próxima ação']}
+              gridClass="lg:grid-cols-[minmax(0,1.6fr)_8rem_8rem_9rem]"
+              className={loading ? 'opacity-60' : ''}
+            >
+              {items.map((item) => (
+                <TableRow
+                  key={item.googlePlaceId}
+                  to={`/prospectos/${encodeURIComponent(item.googlePlaceId)}?from=abordar`}
+                  gridClass="lg:grid-cols-[minmax(0,1.6fr)_8rem_8rem_9rem]"
+                  label={item.name}
+                >
+                  <TableCell>
+                    <p className="truncate text-sm font-medium text-fg">
+                      {item.name}
+                    </p>
+                    <p className="truncate text-sm text-fg-muted">
+                      {item.phone ? formatPhone(item.phone) : '—'}
+                    </p>
+                  </TableCell>
+                  <TableCell label="Avaliações">
+                    <p className="text-sm tabular-nums text-fg">
+                      {item.userRatingsTotal ?? '—'}
+                      {item.rating != null ? ` · ${item.rating.toFixed(1)}` : ''}
+                    </p>
+                  </TableCell>
+                  <TableCell label="Tipo">
+                    <p className="truncate text-sm text-fg">
+                      {item.placeKind ? PLACE_KIND_LABEL[item.placeKind] : '—'}
+                    </p>
+                  </TableCell>
+                  <TableCell label="Próxima ação">
+                    <p className="text-sm text-fg">{actionWhen(item.nextActionOn)}</p>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </Table>
+          )}
+
+          {total > 0 ? (
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <p className="text-sm tabular-nums text-fg-muted">
+                {rangeFrom}–{rangeTo} de {total}
+              </p>
+              {pageCount > 1 ? (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={page <= 1 || loading}
+                    onClick={() => setPage((current) => current - 1)}
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={page >= pageCount || loading}
+                    onClick={() => setPage((current) => current + 1)}
+                  >
+                    Próxima
+                  </Button>
+                </div>
               ) : null}
             </div>
           ) : null}

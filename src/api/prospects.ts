@@ -10,6 +10,10 @@ export type OutreachStatus =
   | 'competitor'
   | 'skip';
 
+export type PlaceKind = 'arena' | 'society' | 'condo' | 'school' | 'closed';
+
+export type LostReason = 'price' | 'has_system' | 'no_hourly';
+
 export type CourtCompetitor =
   | 'unknown'
   | 'none'
@@ -31,6 +35,10 @@ export type GoogleCourtProspect = {
   userRatingsTotal: number | null;
   competitor: CourtCompetitor;
   outreachStatus: OutreachStatus;
+  placeKind: PlaceKind | null;
+  nextActionOn: string | null;
+  lostReason: LostReason | null;
+  rentsHourly: boolean | null;
   notes: string | null;
   contactedAt: string | null;
   alreadyRegistered: boolean;
@@ -133,21 +141,45 @@ export const COMPETITOR_LABEL: Record<CourtCompetitor, string> = {
   other: 'Outro',
 };
 
+export const PLACE_KIND_LABEL: Record<PlaceKind, string> = {
+  arena: 'Arena',
+  society: 'Sociedade',
+  condo: 'Condomínio',
+  school: 'Escola',
+  closed: 'Fechou',
+};
+
+export const LOST_REASON_LABEL: Record<LostReason, string> = {
+  price: 'Preço',
+  has_system: 'Já tenho sistema',
+  no_hourly: 'Não alugo hora',
+};
+
 export function listProspects(params: {
   q?: string;
   city?: string;
   uf?: string;
   status?: OutreachStatus | '';
   competitor?: CourtCompetitor | '';
+  hasPhone?: boolean;
+  hourly?: 'yes' | 'no';
+  due?: boolean;
+  open?: boolean;
+  sort?: 'name' | 'reviews';
   page?: number;
   limit?: number;
 }) {
-  const query: Record<string, string | number> = {};
+  const query: Record<string, string | number | boolean> = {};
   if (params.q?.trim()) query.q = params.q.trim();
   if (params.city?.trim()) query.city = params.city.trim();
   if (params.uf?.trim()) query.uf = params.uf.trim();
   if (params.status) query.status = params.status;
   if (params.competitor) query.competitor = params.competitor;
+  if (params.hasPhone) query.hasPhone = true;
+  if (params.hourly) query.hourly = params.hourly;
+  if (params.due) query.due = true;
+  if (params.open) query.open = true;
+  if (params.sort) query.sort = params.sort;
   if (params.page) query.page = params.page;
   if (params.limit) query.limit = params.limit;
   return api
@@ -172,6 +204,10 @@ export function updateProspect(
   payload: {
     outreachStatus?: OutreachStatus;
     competitor?: CourtCompetitor;
+    placeKind?: PlaceKind | null;
+    nextActionOn?: string | null;
+    lostReason?: LostReason | null;
+    rentsHourly?: boolean | null;
     notes?: string;
     city?: string;
     uf?: string;

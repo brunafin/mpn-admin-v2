@@ -14,7 +14,7 @@ export const ADMIN_NAV = [
   {
     to: '/inicio',
     label: 'Início',
-    description: 'Painel e acessos',
+    description: 'Filas do dia',
     Icon: MdOutlineDashboard,
     match: (path: string) => path === '/inicio',
   },

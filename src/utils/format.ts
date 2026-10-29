@@ -27,6 +27,8 @@ export function formatDateTime(value: string | null | undefined): string {
 
 export function formatDate(value: string | null | undefined): string {
   if (!value) return '—';
+  const calendar = formatCalendarDate(value);
+  if (calendar) return calendar;
   const date = toDate(value);
   if (!isValid(date)) return '—';
   return new Intl.DateTimeFormat('pt-BR', {
@@ -35,6 +37,26 @@ export function formatDate(value: string | null | undefined): string {
     month: '2-digit',
     year: 'numeric',
   }).format(date);
+}
+
+/** YYYY-MM-DD sem deslocar o dia pelo fuso. Null se não for data civil. */
+export function formatCalendarDate(
+  value: string | null | undefined,
+): string | null {
+  if (!value) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
+/** Dia civil de hoje em America/Sao_Paulo, YYYY-MM-DD. */
+export function todayKeyBrazil(now = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: BRAZIL_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
 }
 
 /** "agora" / "há 12 min" — para recorte da última hora. */
